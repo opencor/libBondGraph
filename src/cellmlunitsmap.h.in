@@ -1,0 +1,275 @@
+#ifndef CELLMLUNITSMAP_H__
+#define CELLMLUNITSMAP_H__
+#include "Exceptions.h"
+#include "thirdparty/tinyxml2.h"
+#include <algorithm>
+#include <cctype>
+#include <map>
+#include <sstream>
+#include <string>
+#include <units.hpp>
+#include <unordered_map>
+#include <vector>
+#include <tuple>
+
+namespace BG {
+
+class CellMLUnits
+{
+private:
+    std::unordered_map<std::string, units::precise_unit> dimensions;
+    std::unordered_map<std::string, std::string> existingNames;
+    std::string predinedunitsXML;
+
+public:
+    inline std::string trim(const std::string &s)
+    {
+        auto wsfront = std::find_if_not(s.begin(), s.end(), [](int c) { return std::isspace(c); });
+        auto wsback = std::find_if_not(s.rbegin(), s.rend(), [](int c) { return std::isspace(c); }).base();
+        return (wsback <= wsfront ? std::string() : std::string(wsfront, wsback));
+    }
+
+    CellMLUnits()
+    {
+        std::string predinedunitsXMLinHex = "@Units_cellml@";
+        hex2ascii(predinedunitsXMLinHex, predinedunitsXML);
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLPrinter printer;
+        std::ostringstream ss;
+        if (doc.Parse(predinedunitsXML.c_str()) == tinyxml2::XML_SUCCESS) {
+            tinyxml2::XMLElement *pRootElement = doc.RootElement();
+            if (pRootElement != nullptr) {
+                //Get 'Units'
+                tinyxml2::XMLElement *units = pRootElement->FirstChildElement("units");
+                while (units) {
+                    std::vector<units::precise_unit> subUnits;
+                    std::string unitName = trim(units->Attribute("name"));
+                    // Get 'unit' Child
+                    tinyxml2::XMLElement *unit = units->FirstChildElement("unit");
+
+                    while (unit) {
+                        std::string lunit;
+                        std::string expon = "1";
+                        std::string prefix = "";
+                        for (const tinyxml2::XMLAttribute *attr = unit->FirstAttribute(); attr != 0; attr = attr->Next()) {
+                            auto an = trim(attr->Name());
+                            auto av = trim(attr->Value());
+                            if (an == "units") {
+                                //Sometimes units definitions use prior definitions
+                                if (dimensions.find(av) != dimensions.end()) {
+                                    lunit = units::to_string(dimensions[av]);
+                                } else {
+                                    lunit = units::to_string(units::unit_from_string(av));
+                                }
+                            } else if (an == "exponent")
+                                expon = av;
+                            else if (an == "prefix")
+                                prefix = av;
+                        }
+                        ss.str("");
+                        ss.clear();
+
+                        if (expon != "1") {
+                            ss << "(" << prefix << " " << lunit << ")^" << expon;
+                        } else {
+                            ss << prefix << " " << lunit;
+                        }
+                        subUnits.push_back(units::unit_from_string(ss.str()));
+                        unit = unit->NextSiblingElement("unit");
+                    }
+
+                    units::precise_unit unitDef = subUnits[0];
+                    for (int ix = 1; ix < subUnits.size(); ix++) {
+                        unitDef = unitDef * subUnits[ix];
+                    }
+                    auto mult = unitDef.multiplier();
+                    auto baseU = unitDef.base_units();
+                    auto preciseunit = units::precise_unit(baseU, mult);
+                    dimensions[unitName] = preciseunit;
+                    //existingNames[preciseunit] = unitName;
+                    existingNames[units::to_string(preciseunit)] = unitName;
+                    //std::cout<<unitName<<"\t"<<units::to_string(preciseunit)<<std::endl;
+                    // Next Units def
+                    units = units->NextSiblingElement("units");
+                }
+            }
+        } else {
+            throw BGException("Error creating CellML document from @UNITSCELLMLFILE@");
+        }
+    };
+
+    unsigned char hexval(unsigned char c)
+    {
+        if ('0' <= c && c <= '9')
+            return c - '0';
+        else if ('a' <= c && c <= 'f')
+            return c - 'a' + 10;
+        else if ('A' <= c && c <= 'F')
+            return c - 'A' + 10;
+        else
+            throw BGException("Error parsing xml (@UNITSCELLMLFILE@) loaded through cmake");
+    };
+
+    void hex2ascii(const std::string &in, std::string &out)
+    {
+        out.clear();
+        out.reserve(in.length() / 2);
+        for (std::string::const_iterator p = in.begin(); p != in.end(); p++) {
+            unsigned char c = hexval(*p);
+            p++;
+            if (p == in.end())
+                break; // incomplete last digit - should report error
+            c = (c << 4) + hexval(*p); // + takes precedence over <<
+            out.push_back(c);
+        }
+    }
+
+    std::string getPredinedunitsXML() {
+        return predinedunitsXML;
+    }
+
+    std::string
+        getUnitName(const std::string &unit)
+    {
+        //units::precise_unit unit = units::unit_from_string(unitStr);
+        if (existingNames.find(unit) != existingNames.end()) {
+            return existingNames[unit];
+        }
+        throw BGException("Name for unit " + unit + " not found");
+    }
+
+    std::tuple<std::string,std::string> getCellMLDef(const std::string& unit){
+        units::precise_unit unitDef = units::unit_from_string(unit);
+        auto mult = unitDef.multiplier();
+        auto baseU = unitDef.base_units();
+        std::vector<std::string> unitl;
+        std::string multiplier = "";
+        if(mult!=1.0){
+            multiplier = "multiplier=\""+std::to_string(mult)+"\"";
+        }
+        if(baseU.meter()!=0){
+            std::string mx = multiplier;
+            if(baseU.meter()<0){
+                mx = "";
+            }
+            if(baseU.meter()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.meter())+"\" units=\"metre\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"metre\" />");
+            }
+            if(baseU.meter()>0){
+                multiplier = "";
+            }            
+        }
+        if(baseU.kg()!=0){
+            std::string mx = multiplier;
+            if(baseU.kg()<0){
+                mx = "";
+            }            
+            if(baseU.kg()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kg())+"\" units=\"kilogram\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"kilogram\" />");
+            }
+            if(baseU.kg()>0){
+                multiplier = "";
+            }             
+        }
+        if(baseU.second()!=0){
+            std::string mx = multiplier;
+            if(baseU.second()<0){
+                mx = "";
+            }            
+            if(baseU.second()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.second())+"\" units=\"second\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"second\" />");
+            }
+            if(baseU.second()>0){
+                multiplier = "";
+            }             
+        }
+        if(baseU.ampere()!=0){
+            std::string mx = multiplier;
+            if(baseU.ampere()<0){
+                mx = "";
+            }            
+            if(baseU.ampere()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.ampere())+"\" units=\"ampere\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"ampere\" />");
+            }
+            if(baseU.ampere()>0){
+                multiplier = "";
+            }             
+        }
+        if(baseU.kelvin()!=0){
+            std::string mx = multiplier;
+            if(baseU.kelvin()<0){
+                mx = "";
+            }            
+            if(baseU.kelvin()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kelvin())+"\" units=\"kelvin\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"kelvin\" />");
+            }
+            if(baseU.kelvin()>0){
+                multiplier = "";
+            }             
+        }
+        if(baseU.mole()!=0){
+            std::string mx = multiplier;
+            if(baseU.mole()<0){
+                mx = "";
+            }            
+            if(baseU.mole()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.mole())+"\" units=\"mole\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"mole\" />");
+            }
+            if(baseU.mole()>0){
+                multiplier = "";
+            }             
+        }        
+        if(baseU.candela()!=0){
+            std::string mx = multiplier;
+            if(baseU.candela()<0){
+                mx = "";
+            }            
+            if(baseU.candela()!=1){
+                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.candela())+"\" units=\"candela\" />");
+            }else{
+                unitl.push_back("<unit "+mx+" units=\"candela\" />");
+            }
+            if(baseU.candela()>0){
+                multiplier = "";
+            }             
+        } 
+        std::ostringstream ss;
+        std::string uname = unit;
+        auto replace = [&uname](std::string from, std::string to) {
+            size_t start_pos = 0;
+            while ((start_pos = uname.find(from, start_pos)) != std::string::npos) {
+                uname.replace(start_pos, from.length(), to);
+                start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+            }
+            return uname;
+        };
+        replace("/","_");
+        replace("*", "_");
+        if(isdigit(uname[0])){
+            uname = "D"+uname;
+        }
+
+        ss<<"<units name=\""<<uname<<"\">"<<std::endl;
+        for(auto c: unitl){
+            ss<<"\t"<<c<<std::endl;
+        }  
+        ss<<"</units>"<<std::endl;
+        std::string res = ss.str();
+        return std::make_tuple(uname,res);
+    }
+};
+} // namespace BG
+
+#endif

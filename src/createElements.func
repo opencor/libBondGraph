@@ -1,0 +1,59 @@
+/**
+ * Common code used in bondgraph.cpp and utilities for creating instances using 
+ * element type and data instance
+ */
+    switch (etype) { 
+    case eResistance: 
+        ptr = __createResistance_do_not_call_outside_of_lib(data); 
+        break; 
+    case eCapacitance: 
+        ptr = __createCapacitance_do_not_call_outside_of_lib(data); 
+        break; 
+    case eInductance:  
+        ptr = __createInductance_do_not_call_outside_of_lib(data);  
+        break; 
+    case eTransformer: 
+        ptr = createTransformer(data); 
+        break; 
+    case eGyrator: 
+        ptr = createGyrator(data); 
+        break; 
+    case ePotentialSource: 
+        ptr = createPotentialSource(data); 
+        break; 
+    case eFlowSource: 
+        ptr = createFlowSource(data); 
+        break; 
+    case bReaction: 
+        ptr = createReaction(data); 
+        break; 
+    case bConcentration: 
+        ptr = createConcentration(data); 
+        break; 
+    case eZero: 
+        ptr = createZeroJunction(data); 
+        break; 
+    case eOne: 
+        ptr = createOneJunction(data); 
+        break; 
+    case ePortHamiltonian: { 
+        if (data.is_null()) { 
+            std::string &expr = obj->hamiltonian; 
+            std::vector<std::string> states_; 
+            for (int i = 0; i < obj->numStates; i++) { 
+                std::string &sp = obj->mParameter[i]->prefix; 
+                std::string sn = sp.substr(0, sp.rfind("_")); 
+                states_.push_back(sn); 
+            } 
+            ptr = createPortHamiltonian(expr, states_, data); 
+        } else { 
+            ptr = createPortHamiltonian("", {}, data); 
+        } 
+        break; 
+    } 
+    case eUserDefined: 
+        ptr = createUserDefined(data); 
+        break; 
+    default: 
+        throw BGException("Element type proxy constructor not implemented!"); 
+    } 
