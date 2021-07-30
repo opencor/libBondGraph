@@ -1,0 +1,89 @@
+{
+    "Electrical": {
+        "Resistance": {
+            "description": "Linear Resistor",
+            "name": "Resistor",
+            "parameters": {
+                "r": {
+                    "description": "Resistance",
+                    "dimension": "Ohm",
+                    "universalConstant": false,
+                    "value": 1.0
+                }
+            },
+            "constitutive_relations": [
+                "e_0 - f_0*r"
+            ]
+        },
+        "Capacitance": {
+            "description": "Linear Capacitor",
+            "name": "Capacitor",
+            "parameters": {
+                "C": {
+                    "description": "Capacitance",
+                    "dimension": "Farad",
+                    "value": 1.0
+                }
+            },
+            "states": {
+                "q_0": {
+                    "description": "Electric charge",
+                    "dimension": "coulomb",
+                    "value": 0.0
+                }
+            },
+            "constitutive_relations": [
+                "q_0 - C * e_0",
+                "dot_q_0 - f_0"
+            ]
+        },
+        "Inductance": {
+            "description": "Linear Inductor",
+            "name": "Inductor",
+            "states": {
+                "p_0": {
+                    "description": "Magetic flux",
+                    "dimension": "weber",
+                    "value": 0.0
+                }
+            },
+            "parameters": {
+                "L": {
+                    "description": "Inductance",
+                    "dimension": "henry",
+                    "value": 1.0
+                }
+            },
+            "constitutive_relations": [
+                "p_0 - L*f_0",
+                "dot_p_0 - e_0"
+            ]
+        },
+        "PotentialSource": {
+            "name": "ConstantVoltageSource",
+            "description": "Constant Voltage Source",
+            "parameters": {
+                "u": {
+                    "description": "Voltage",
+                    "dimension": "V",
+                    "value": 1.0
+                }
+            }
+        },
+        "FlowSource": {
+            "name": "ConstantCurrentSource",
+            "description": "Constant Current Source",
+            "parameters": {
+                "a": {
+                    "description": "Current",
+                    "dimension": "A",
+                    "value": 1.0
+                }
+            }
+        },
+        "BondDimensions":{
+            "effort":"V",
+            "flow":"A"
+        }
+    }
+}

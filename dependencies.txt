@@ -1,0 +1,5 @@
+SymEngine https://github.com/symengine/symengine.git
+Units     https://github.com/LLNL/units.git
+spdlog    https://github.com/gabime/spdlog.git
+nlohmann  https://github.com/nlohmann/json.git
+NGraph    https://math.nist.gov/~RPozo/ngraph/
