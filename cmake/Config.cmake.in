@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/BondGraphTargets.cmake")
+
+check_required_components(BondGraph)
+
+set(BondGraph_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+set(BondGraph_INCLUDE_DIRECTORIES "${PACKAGE_PREFIX_DIR}/include")
+set(BondGraph_INSTALL_DIR "${PACKAGE_PREFIX_DIR}")
+set(BondGraph_INSTALL_DIRECTORY "${PACKAGE_PREFIX_DIR}")
+set(BondGraph_LIBRARIES BondGraph teuchos)
