@@ -5,7 +5,6 @@ set(SYMENGINE_MINOR_VERSION 9)
 set(SYMENGINE_PATCH_VERSION 0)
 set(SYMENGINE_VERSION ${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}.${SYMENGINE_PATCH_VERSION})
 
-
 set(INTEGER_CLASS "boostmp" CACHE STRING "Integer class for ${PROJECT_NAME}. ")
 set(SYMENGINE_INTEGER_CLASS "BOOSTMP")
 set(WITH_BOOST yes)
@@ -84,10 +83,10 @@ set(SRC
     tuple.cpp
 )
 
-#Using boost multirecision
+# Using boost multirecision
 set(SRC ${SRC} mp_boost.cpp)
 
-if (WITH_LLVM)
+if(WITH_LLVM)
     set(SRC ${SRC} llvm_double.cpp)
 endif()
 
@@ -184,24 +183,23 @@ set(HEADERS
 file(GLOB_RECURSE CEREAL_HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "utilities/cereal/include/*")
 set(HEADERS ${HEADERS} ${CEREAL_HEADERS})
 
-#Boost.multiprecision build segfaults if -O3 optimization is on
-#which it is by default for cmake Release mode. Remove -O3 from flags.
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+# Boost.multiprecision build segfaults if -O3 optimization is on
+# which it is by default for cmake Release mode. Remove -O3 from flags.
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     string(REPLACE "-O3" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 endif()
 
 include(GNUInstallDirs)
 
 # Configure SymEngine using our CMake options:
-#set(SYMENGINE_CLING_LIBRARY_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\"")
-
+# set(SYMENGINE_CLING_LIBRARY_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\"")
 configure_file(symengine_config.h.in symengine_config.h)
 configure_file(symengine_config_cling.h.in symengine_config_cling.h)
 
 # Include the config file:
 include_directories(BEFORE ${symengine_BINARY_DIR})
-# Include the source directory
 
+# Include the source directory
 include_directories(BEFORE ${symengine_SOURCE_DIR})
 include_directories(BEFORE ${symengine_BINARY_DIR}/..)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -210,52 +208,51 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/../teuchos)
 include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/utilities/cereal/include)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/utilities/cereal/include)
 
+add_library(${PROJECT_NAME} STATIC ${SRC})
 
-add_library(${PROJECT_NAME} ${SRC})
-
-target_include_directories(${PROJECT_NAME} 
-        PRIVATE 
-        ${Boost_INCLUDE_DIR}
-        )
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+    ${Boost_INCLUDE_DIR}
+)
 
 include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "symengine_EXPORTS")
-if (BUILD_SHARED_LIBS)
-    set_target_properties(
-        ${PROJECT_NAME}
-        PROPERTIES
-        VERSION ${SYMENGINE_VERSION}
-        SOVERSION ${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
-    )
-    if (WIN32)
-        set_target_properties(
-            ${PROJECT_NAME}
-            PROPERTIES
-            RUNTIME_OUTPUT_NAME ${PROJECT_NAME}-${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
-        )
-    endif()
-endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+# if (BUILD_SHARED_LIBS)
+# set_target_properties(
+# ${PROJECT_NAME}
+# PROPERTIES
+# VERSION ${SYMENGINE_VERSION}
+# SOVERSION ${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
+# )
+# if (WIN32)
+# set_target_properties(
+# ${PROJECT_NAME}
+# PROPERTIES
+# RUNTIME_OUTPUT_NAME ${PROJECT_NAME}-${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
+# )
+# endif()
+# endif()
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wconversion -Wno-sign-conversion")
     set_source_files_properties(parser/parser.tab.cc PROPERTIES COMPILE_FLAGS "-Wno-conversion")
 endif()
 
-if (WITH_LLVM AND NOT ${LLVM_VERSION} VERSION_LESS "10.0.0")
+if(WITH_LLVM AND NOT ${LLVM_VERSION} VERSION_LESS "10.0.0")
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED yes)
 endif()
 
 target_link_libraries(${PROJECT_NAME} teuchos)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-                        POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS}
-                        )
+    POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS}
+)
 
-if (WITH_LLVM AND NOT SYMENGINE_LLVM_LINK_DOWNSTREAM)
-    if (${EXCLUDE_LIBS})
+if(WITH_LLVM AND NOT SYMENGINE_LLVM_LINK_DOWNSTREAM)
+    if(${EXCLUDE_LIBS})
         set_property(TARGET ${PROJECT_NAME} APPEND_STRING PROPERTY LINK_FLAGS "-Wl,--exclude-libs,ALL")
-    elseif (${UNEXPORTED_SYMBOL})
+    elseif(${UNEXPORTED_SYMBOL})
         set(LLVM_SYMBOLS_AVOID "${LLVM_SYMBOLS_AVOID} -Wl,-unexported_symbol,__ZTVN4llvm* -Wl,-unexported_symbol,__ZNK4llvm*")
         set(LLVM_SYMBOLS_AVOID "${LLVM_SYMBOLS_AVOID} -Wl,-unexported_symbol,__ZN4llvm* -Wl,-unexported_symbol,__ZTIN4llvm*")
         set(LLVM_SYMBOLS_AVOID "${LLVM_SYMBOLS_AVOID} -Wl,-unexported_symbol,_LLVM* -Wl,-unexported_symbol,__ZTSN4llvm*")
@@ -263,17 +260,16 @@ if (WITH_LLVM AND NOT SYMENGINE_LLVM_LINK_DOWNSTREAM)
     endif()
 endif()
 
-
-if (BUILD_SYMENGINE_TESTING)
+if(BUILD_SYMENGINE_TESTING)
     add_subdirectory(utilities/catch)
     add_subdirectory(tests)
 endif()
 
-install(TARGETS symengine
-            EXPORT BondGraphTargets
-            RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )
+# install(TARGETS symengine
+# EXPORT BondGraphTargets
+# RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# )
 
-#install(FILES ${HEADERS} "${symengine_BINARY_DIR}/symengine_config.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty/symengine)
+# install(FILES ${HEADERS} "${symengine_BINARY_DIR}/symengine_config.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty/symengine)

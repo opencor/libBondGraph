@@ -32,27 +32,27 @@ set(HEADERS
     Teuchos_TypeNameTraits.hpp
 )
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-  # Must suppress strict aliasing warnings for this file!
-  SET_SOURCE_FILES_PROPERTIES(
-    Teuchos_stacktrace.cpp
-    PROPERTIES COMPILE_FLAGS -fno-strict-aliasing
+if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+    # Must suppress strict aliasing warnings for this file!
+    SET_SOURCE_FILES_PROPERTIES(
+        Teuchos_stacktrace.cpp
+        PROPERTIES COMPILE_FLAGS -fno-strict-aliasing
     )
 endif()
 
 # Configure Teuchos using our CMake options:
 configure_file(Teuchos_config.h.in Teuchos_config.h)
+
 # Include the config file:
 include_directories(BEFORE ${teuchos_BINARY_DIR})
 
-add_library(teuchos ${SRC})
+add_library(teuchos STATIC ${SRC})
 
 install(TARGETS teuchos
-            EXPORT BondGraphTargets
-            RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )
+    EXPORT BondGraphTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 install(FILES ${HEADERS} "${teuchos_BINARY_DIR}/Teuchos_config.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty/teuchos)
-

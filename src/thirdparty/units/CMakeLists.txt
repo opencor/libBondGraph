@@ -114,17 +114,17 @@ endif()
 if(NOT UNITS_HEADER_ONLY)
     if(BUILD_SHARED_LIBS)
         option(UNITS_BUILD_STATIC_LIBRARY
-               "enable Construction of the units static library" OFF
+            "enable Construction of the units static library" OFF
         )
         option(UNITS_BUILD_SHARED_LIBRARY
-               "enable Construction of the units shared library" ON
+            "enable Construction of the units shared library" ON
         )
     else(BUILD_SHARED_LIBS)
         option(UNITS_BUILD_STATIC_LIBRARY
-               "enable Construction of the units static library" ON
+            "enable Construction of the units static library" ON
         )
         option(UNITS_BUILD_SHARED_LIBRARY
-               "enable Construction of the units shared library" OFF
+            "enable Construction of the units shared library" OFF
         )
     endif(BUILD_SHARED_LIBS)
 
@@ -132,7 +132,6 @@ if(NOT UNITS_HEADER_ONLY)
         UNITS_BUILD_OBJECT_LIBRARY "Enable construction of the units object library"
         OFF "NOT CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME" OFF
     )
-
 endif(NOT UNITS_HEADER_ONLY)
 
 # Prepare Clang-Tidy
@@ -152,9 +151,11 @@ if(UNITS_BUILD_FUZZ_TARGETS)
     add_subdirectory(FuzzTargets)
 elseif(UNITS_ENABLE_TESTS)
     enable_testing()
+
     if(BUILD_TESTING)
         add_subdirectory(test)
     endif()
+
     if(NOT UNITS_HEADER_ONLY)
         add_subdirectory(webserver)
         add_subdirectory(converter)
@@ -162,18 +163,18 @@ elseif(UNITS_ENABLE_TESTS)
 endif()
 
 # if(UNITS_INSTALL)
-#     if(UNITS_BUILD_STATIC_LIBRARY)
-#         install(TARGETS compile_flags_target ${UNITS_LIBRARY_EXPORT_COMMAND})
-#     endif()
-#     if(UNITS_WITH_CMAKE_PACKAGE AND NOT UNITS_BINARY_ONLY_INSTALL)
-#         install(EXPORT unitsConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/units)
-#         export(EXPORT unitsConfig)
-#     endif()
+# if(UNITS_BUILD_STATIC_LIBRARY)
+# install(TARGETS compile_flags_target ${UNITS_LIBRARY_EXPORT_COMMAND})
+# endif()
+# if(UNITS_WITH_CMAKE_PACKAGE AND NOT UNITS_BINARY_ONLY_INSTALL)
+# install(EXPORT unitsConfig DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/units)
+# export(EXPORT unitsConfig)
+# endif()
 # endif()
 
-install(TARGETS units-shared
-            EXPORT BondGraphTargets
-            RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )       
+# install(TARGETS units-shared
+# EXPORT BondGraphTargets
+# RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# )
