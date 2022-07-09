@@ -1,6 +1,6 @@
 include_directories(BEFORE
   ${PROJECT_SOURCE_DIR}/src
-  ${Boost_INCLUDE_DIR}
+  ${BG_BOOSTMP_INCLUDE_DIR}
 )
 
 add_executable(

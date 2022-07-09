@@ -37,6 +37,9 @@ include_directories(BEFORE ${teuchos_BINARY_DIR})
 # Inform symengine that we are using Teuchos
 add_definitions(-DTHIRDPARTY_TEUCHOS)
 
+# SymEngine Requires boost multiprecision 1.77.0 or higher
+set(BG_BOOSTMP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/boostmp_1_77")
+
 # Link with Symengine
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/symengine")
 
@@ -157,7 +160,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
 target_include_directories(${PROJECT_NAME}
   PRIVATE
   ${CMAKE_CURRENT_BUILD_DIR}
-  ${Boost_INCLUDE_DIR}
+  ${BG_BOOSTMP_INCLUDE_DIR}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE teuchos symengine units-object)
