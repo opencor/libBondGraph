@@ -212,7 +212,8 @@ add_library(${PROJECT_NAME} STATIC ${SRC})
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-    ${Boost_INCLUDE_DIR}
+    #${Boost_INCLUDE_DIR}
+    ${PROJECT_SOURCE_DIR}/src/thirdparty/boostmp_1_77/boost
 )
 
 include(GenerateExportHeader)

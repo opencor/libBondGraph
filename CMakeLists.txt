@@ -37,9 +37,6 @@ include_directories(BEFORE ${teuchos_BINARY_DIR})
 # Inform symengine that we are using Teuchos
 add_definitions(-DTHIRDPARTY_TEUCHOS)
 
-# Symengine uses boost, boost 1.77.0 works, other are a pain
-find_package(Boost 1.77.0 REQUIRED)
-
 # Link with Symengine
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/symengine")
 
