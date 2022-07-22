@@ -119,7 +119,7 @@ public:
     //Set weight
      virtual void setWeight(double wt) = 0;
     //! Get weight
-     virtual const double getWeight() const = 0;
+     virtual double getWeight() const = 0;
 };
 
 class EXPORTED BondInterface{

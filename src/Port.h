@@ -63,7 +63,7 @@ public:
     //Set weight
      void setWeight(double wt);
     //! Get weight
-     const double getWeight() const;
+    double getWeight() const;
     friend  RCPLIB::RCP<PortInterface> createPort(bool inPower);
     friend void to_json(nlohmann::json &j, const RCPLIB::RCP<PortInterface> &p);
     friend RCPLIB::RCP<BGElement>  loadJson(const nlohmann::json &j, const RCPLIB::RCP<BGElementData> &proxy);

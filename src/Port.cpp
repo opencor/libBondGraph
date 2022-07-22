@@ -86,7 +86,7 @@ namespace BG {
         weight = wt;
     }
     //! Get weight
-    const double Port::getWeight() const
+    double Port::getWeight() const
     {
         return weight;
     };
