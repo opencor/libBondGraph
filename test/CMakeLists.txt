@@ -1,5 +1,6 @@
 include_directories(BEFORE
   ${PROJECT_SOURCE_DIR}/src
+  ${CMAKE_BINARY_DIR}
   ${BG_BOOSTMP_INCLUDE_DIR}
 )
 
@@ -10,7 +11,6 @@ add_executable(
 target_link_libraries(
   basic_test
   gtest_main
-  teuchos
   symengine
   units-object
   ${PROJECT_NAME}

@@ -26,6 +26,25 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#if defined(_MSC_VER) && !defined(__clang__)
+    #pragma warning(push)
+    #pragma warning(disable: 4244)
+    #pragma warning(disable: 4267)
+    #pragma warning(disable: 4996)
+#elif defined(__GNUC__) && !defined(__clang__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
+    #pragma GCC diagnostic ignored "-Wunused-parameter"
+    #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+    #pragma GCC diagnostic ignored "-Wterminate"
+#else
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdelete-non-virtual-dtor"
+    #pragma clang diagnostic ignored "-Wunused-parameter"
+    #pragma clang diagnostic ignored "-Wstrict-aliasing"
+    #pragma clang diagnostic ignored "-Wterminate"    
+#endif
+
 #ifndef TEUCHOS_STACKTRACE_HPP
 #define TEUCHOS_STACKTRACE_HPP
 

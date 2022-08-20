@@ -25,15 +25,6 @@ set(ENABLE_LOGGING ON CACHE BOOL "Enable logging")
 
 set(PARSE_AND_CREATE_FACTORY_METHODS OFF CACHE BOOL "Parse BG Element descriptions in the resource folder to create faactory methods")
 
-# Build teuchos
-add_subdirectory(src/thirdparty/teuchos)
-
-# Include Teuchos headers:
-include_directories(BEFORE ${teuchos_SOURCE_DIR})
-
-# Include Teuchos config file (generated per build):
-include_directories(BEFORE ${teuchos_BINARY_DIR})
-
 # Inform symengine that we are using Teuchos
 add_definitions(-DTHIRDPARTY_TEUCHOS)
 
@@ -57,41 +48,67 @@ set(UNITS_HEADER_ONLY OFF CACHE INTERNAL "hide this!" FORCE)
 set(UNITS_BUILD_OBJECT_LIBRARY ${UNITS_BUILD_OBJECT_LIBRARY} CACHE INTERNAL "hide this!" FORCE)
 set(UNITS_NAMESPACE ${UNITS_NAMESPACE} CACHE INTERNAL "hide this!" FORCE)
 
-# if(NOT ${BUILD_SHARED_LIBS})
-# set_target_properties(units-static PROPERTIES FOLDER Extern)
-# endif()
-
 # Hide splog variables
 set(BUILD_TESTS OFF CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(BUILD_TESTS)
 set(SPDLOG_BUILD_ALL ${SPDLOG_BUILD_ALL} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_ALL)
 set(SPDLOG_BUILD_BENCH ${SPDLOG_BUILD_BENCH} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_BENCH)
 set(SPDLOG_BUILD_EXAMPLE_HO ${SPDLOG_BUILD_EXAMPLE_HO} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_EXAMPLE_HO)
 set(SPDLOG_BUILD_SHARED OFF CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_SHARED)
 set(SPDLOG_BUILD_TESTS ${SPDLOG_BUILD_TESTS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_TESTS)
 set(SPDLOG_BUILD_TESTS_HO ${SPDLOG_BUILD_TESTS_HO} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_TESTS_HO)
 set(SPDLOG_BUILD_WARNINGS ${SPDLOG_BUILD_WARNINGS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_WARNINGS)
 set(SPDLOG_CLOCK_COARSE ${SPDLOG_CLOCK_COARSE} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_CLOCK_COARSE)
 set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_DISABLE_DEFAULT_LOGGER)
 set(SPDLOG_ENABLE_PCH ${SPDLOG_ENABLE_PCH} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_ENABLE_PCH)
 set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_DISABLE_DEFAULT_LOGGER)
 set(SPDLOG_FMT_EXTERNAL ${SPDLOG_FMT_EXTERNAL} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_FMT_EXTERNAL)
 set(SPDLOG_FMT_EXTERNAL_HO ${SPDLOG_FMT_EXTERNAL_HO} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_FMT_EXTERNAL_HO)
 set(SPDLOG_INSTALL ${SPDLOG_INSTALL} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_INSTALL)
 set(SPDLOG_NO_ATOMIC_LEVELS ${SPDLOG_NO_ATOMIC_LEVELS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_NO_ATOMIC_LEVELS)
 set(SPDLOG_NO_EXCEPTIONS ${SPDLOG_NO_EXCEPTIONS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_NO_EXCEPTIONS)
 set(SPDLOG_NO_THREAD_ID ${SPDLOG_NO_THREAD_ID} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_NO_THREAD_ID)
 set(SPDLOG_NO_TLS ${SPDLOG_NO_TLS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_NO_TLS)
 set(SPDLOG_PREVENT_CHILD_FD ${SPDLOG_PREVENT_CHILD_FD} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_PREVENT_CHILD_FD)
 set(SPDLOG_TIDY ${SPDLOG_TIDY} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_TIDY)
 set(SPDLOG_SANITIZE_ADDRESS ${SPDLOG_SANITIZE_ADDRESS} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_SANITIZE_ADDRESS)
 set(SPDLOG_LEVEL_NAME_TRACE ${SPDLOG_LEVEL_NAME_TRACE} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_TRACE)
 set(SPDLOG_LEVEL_NAME_OFF ${SPDLOG_LEVEL_NAME_OFF} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_OFF)
 set(SPDLOG_LEVEL_NAME_ERROR ${SPDLOG_LEVEL_NAME_ERROR} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_ERROR)
 set(SPDLOG_LEVEL_NAME_CRITICAL ${SPDLOG_LEVEL_NAME_CRITICAL} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_CRITICAL)
 set(SPDLOG_LEVEL_NAME_DEBUG ${SPDLOG_LEVEL_NAME_DEBUG} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_DEBUG)
 set(SPDLOG_LEVEL_NAME_INFO ${SPDLOG_LEVEL_NAME_INFO} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_INFO)
 set(SPDLOG_LEVEL_NAME_WARNING ${SPDLOG_LEVEL_NAME_WARNING} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_LEVEL_NAME_WARNING)
 set(SPDLOG_BUILD_EXAMPLE ${SPDLOG_BUILD_EXAMPLE} CACHE INTERNAL "hide this!" FORCE)
+mark_as_advanced(SPDLOG_BUILD_EXAMPLE)
 
 if(BUILD_TESTING)
   # Setup google test
@@ -120,6 +137,9 @@ vtk_encode_string(
 
 configure_file("${PROJECT_SOURCE_DIR}/src/cellmlunitsmap.h.in" "${PROJECT_SOURCE_DIR}/src/cellmlunitsmap.h")
 
+# Configure Teuchos using our CMake options:
+configure_file(src/thirdparty/teuchos/Teuchos_config.h.in Teuchos_config.h)
+
 # Export the metadatajson generated by generateFactoryMethods.py
 set(ELEMENTMETADATAJSON metadatastring)
 vtk_encode_string(
@@ -129,6 +149,12 @@ vtk_encode_string(
 )
 
 set(SRC
+  src/thirdparty/teuchos/Teuchos_dyn_cast.cpp
+  src/thirdparty/teuchos/Teuchos_Ptr.cpp
+  src/thirdparty/teuchos/Teuchos_RCPNode.cpp
+  src/thirdparty/teuchos/Teuchos_TestForException.cpp
+  src/thirdparty/teuchos/Teuchos_TypeNameTraits.cpp
+  src/thirdparty/teuchos/Teuchos_stacktrace.cpp
   src/thirdparty/tinyxml2.cpp
   src/componentregistry.cpp
   src/logging.cpp
@@ -159,11 +185,11 @@ include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
 
 target_include_directories(${PROJECT_NAME}
   PRIVATE
-  ${CMAKE_CURRENT_BUILD_DIR}
+  ${CMAKE_BINARY_DIR}
   ${BG_BOOSTMP_INCLUDE_DIR}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE teuchos symengine units-object)
+target_link_libraries(${PROJECT_NAME} PUBLIC symengine units-object)
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY VERSION ${_PROJECT_VERSION})
 set_property(TARGET ${PROJECT_NAME} PROPERTY SOVERSION 1)
@@ -176,7 +202,7 @@ set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
 if(ENABLE_LOGGING)
   # Link with spdlog
   add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/spdlog")
-  target_link_libraries(${PROJECT_NAME} PRIVATE "$<BUILD_INTERFACE:spdlog::spdlog_header_only>")
+  target_link_libraries(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:spdlog::spdlog_header_only>")
   add_definitions(-DENABLE_LOGGING)
 endif()
 
@@ -206,6 +232,15 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 set(BondGraph_HEADERS
+  src/thirdparty/teuchos/Teuchos_RCPDecl.hpp
+  src/thirdparty/teuchos/Teuchos_Ptr.hpp
+  src/thirdparty/teuchos/Teuchos_Assert.hpp
+  src/thirdparty/teuchos/Teuchos_Exceptions.hpp
+  src/thirdparty/teuchos/Teuchos_dyn_cast.hpp
+  src/thirdparty/teuchos/Teuchos_map.hpp
+  src/thirdparty/teuchos/Teuchos_TypeNameTraits.hpp
+  src/thirdparty/teuchos/Teuchos_RCP.hpp
+  ${CMAKE_BINARY_DIR}/Teuchos_config.h
   src/bondgraph.hpp
   src/export.h
   src/RCP.h

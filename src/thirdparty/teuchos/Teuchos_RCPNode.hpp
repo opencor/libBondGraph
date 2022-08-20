@@ -38,7 +38,6 @@
 //
 // ***********************************************************************
 // @HEADER
-
 /**
  * Following diagnostic pragmas have been added to integrate with opencor.
  * OpenCOR fails to build on these warnings (by design)
@@ -48,14 +47,22 @@
     #pragma warning(disable: 4244)
     #pragma warning(disable: 4267)
     #pragma warning(disable: 4996)
+    #pragma warning(disable: 4297)
 #elif defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
     #pragma GCC diagnostic ignored "-Wunused-parameter"
 #else
     #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdelete-non-virtual-dtor"
-    #pragma clang diagnostic ignored "-Wunused-parameter"
+    #pragma clang diagnostic ignored "-Wdeprecated"
+    #pragma clang diagnostic ignored "-Wmissing-noreturn"
+    #pragma clang diagnostic ignored "-Wweak-vtables"
+    #pragma clang diagnostic ignored "-Wold-style-cast"
+    #pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
+    #pragma clang diagnostic ignored "-Wcovered-switch-default"
+    #pragma clang diagnostic ignored "-Wweak-vtables"
+    #pragma clang diagnostic ignored "-Wreserved-id-macro"
+    #pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
 #endif
 
 #ifndef TEUCHOS_RCP_NODE_HPP
@@ -715,9 +722,6 @@ namespace Teuchos {
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-
-
-
 class TEUCHOS_LIB_DLL_EXPORT RCPNodeHandle {
 public:
   /** \brief . */
