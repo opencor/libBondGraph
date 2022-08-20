@@ -19,5 +19,5 @@ along with this program. If not, see <https://gnu.org/licenses>.
 
 #pragma once
 
-#include "thirdparty/teuchos/Teuchos_RCP.hpp"
+#include "Teuchos_RCP.hpp"
 #define RCPLIB Teuchos
