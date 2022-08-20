@@ -232,6 +232,13 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 set(BondGraph_HEADERS
+  src/Teuchos_any.hpp
+  src/Teuchos_Assert.hpp
+  src/Teuchos_ConfigDefs.hpp
+  src/Teuchos_ConstTypeTraits.hpp
+  src/Teuchos_dyn_cast.hpp
+  src/Teuchos_ENull.hpp
+  src/Teuchos_Exceptions.hpp
   src/Teuchos_getBaseObjVoidPtr.hpp
   src/Teuchos_map.hpp
   src/Teuchos_NullIteratorTraits.hpp
