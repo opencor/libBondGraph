@@ -232,6 +232,7 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 set(BondGraph_HEADERS
+  src/Teuchos_DLLExportMacro.h
   src/Teuchos_any.hpp
   src/Teuchos_Assert.hpp
   src/Teuchos_ConfigDefs.hpp
