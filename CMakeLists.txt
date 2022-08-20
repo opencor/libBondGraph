@@ -232,12 +232,17 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 set(BondGraph_HEADERS
-  src/Teuchos_RCPDecl.hpp
-  src/Teuchos_Ptr.hpp
-  src/Teuchos_Assert.hpp
-  src/Teuchos_Exceptions.hpp
-  src/Teuchos_dyn_cast.hpp
+  src/Teuchos_getBaseObjVoidPtr.hpp
   src/Teuchos_map.hpp
+  src/Teuchos_NullIteratorTraits.hpp
+  src/Teuchos_Ptr.hpp
+  src/Teuchos_PtrDecl.hpp
+  src/Teuchos_RCP.hpp
+  src/Teuchos_RCPDecl.hpp
+  src/Teuchos_RCPNode.hpp
+  src/Teuchos_stacktrace.hpp
+  src/Teuchos_TestForException.hpp
+  src/Teuchos_toString.hpp
   src/Teuchos_TypeNameTraits.hpp
   src/Teuchos_RCP.hpp
   ${CMAKE_BINARY_DIR}/Teuchos_config.h
