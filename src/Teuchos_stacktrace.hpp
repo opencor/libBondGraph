@@ -27,22 +27,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #if defined(_MSC_VER) && !defined(__clang__)
-    #pragma warning(push)
-    #pragma warning(disable: 4244)
-    #pragma warning(disable: 4267)
-    #pragma warning(disable: 4996)
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4996)
 #elif defined(__GNUC__) && !defined(__clang__)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
-    #pragma GCC diagnostic ignored "-Wunused-parameter"
-    #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-    #pragma GCC diagnostic ignored "-Wterminate"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdelete-non-virtual-dtor"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wterminate"
 #else
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdelete-non-virtual-dtor"
-    #pragma clang diagnostic ignored "-Wunused-parameter"
-    #pragma clang diagnostic ignored "-Wstrict-aliasing"
-    #pragma clang diagnostic ignored "-Wterminate"    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdelete-non-virtual-dtor"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wstrict-aliasing"
 #endif
 
 #ifndef TEUCHOS_STACKTRACE_HPP
@@ -55,9 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Teuchos_ConfigDefs.hpp"
 
-
 #ifdef HAVE_TEUCHOS_STACKTRACE
-
 
 /*! \defgroup TeuchosStackTrace_grp Utility code for generating stacktraces.
  *
@@ -65,7 +62,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 namespace Teuchos {
-
 
 /** \brief Stores the current stacktrace into an internal global variable.
  *
@@ -87,7 +83,7 @@ std::string get_stored_stacktrace();
  *
  * \ingroup TeuchosStackTrace_grp
  */
-std::string get_stacktrace(int impl_stacktrace_depth=0);
+std::string get_stacktrace(int impl_stacktrace_depth = 0);
 
 /** \brief Prints the current stacktrace to stdout.
  *
@@ -106,4 +102,3 @@ void print_stack_on_segfault();
 #endif // HAVE_TEUCHOS_STACKTRACE
 
 #endif // TEUCHOS_STACKTRACE_HPP
-
