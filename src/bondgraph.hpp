@@ -16,8 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://gnu.org/licenses>.
 
 *******************************************************************************/
-
 #pragma once
+
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wreserved-id-macro"
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+#endif
+
 #include "RCP.h"
 #include "export.h"
 #include "thirdparty/json.hpp"
@@ -147,7 +155,7 @@ class EXPORTED Value {
 public:
   std::string prefix; // Local name, value against which local parameter search
                       // will be performed
-  std::string name; // Dof dependent name
+  std::string name;   // Dof dependent name
   std::string value;
   std::string units;
   bool universalConstant;
