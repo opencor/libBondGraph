@@ -45,7 +45,8 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->addComponent(lE);
 
   // Create the junctions
-  auto lJ0_1 = createZeroJunction();
+  // auto lJ0_1 = createZeroJunction();
+  auto lJ0_1 = createOneJunction();
   ioBondGraph->addComponent(lJ0_1);
 
   // Create the bonds
@@ -53,6 +54,9 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->connect(lI, lJ0_1);
   ioBondGraph->connect(lC1, lJ0_1);
   ioBondGraph->connect(lE, lJ0_1);
+
+  std::cout << " RLC E " << std::endl;
+  ioBondGraph->computePortHamiltonian();
 
   return ioBondGraph;
 }
@@ -83,9 +87,62 @@ RCPLIB::RCP<BondGraphInterface> reaction() {
   ioBondGraph->connect(B, Y_B);
   ioBondGraph->connectInverting(Re, 0, Y_A);
   ioBondGraph->connectInverting(Re, 1, Y_B);
+
+  std::cout << " Reaction " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
   return ioBondGraph;
 }
 
+RCPLIB::RCP<BondGraphInterface> phstest() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
+  auto lC2 = createCapacitor();
+  ioBondGraph->addComponent(lC2);
+
+  // Create the Flow source
+  auto lSf = createConstantFlowSource();
+  ioBondGraph->addComponent(lSf);
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create the Transformer
+  auto lTf = createTransformer();
+  ioBondGraph->addComponent(lTf);
+
+  // Create the junctions
+  auto lJ0_1 = createZeroJunction();
+  auto lJ1_1 = createOneJunction();
+  ioBondGraph->addComponent(lJ0_1);
+  ioBondGraph->addComponent(lJ1_1);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ1_1, lR);
+  ioBondGraph->connect(lJ1_1, lC1);
+  ioBondGraph->connect(lJ1_1, lTf);
+
+  ioBondGraph->connect(lTf, 1, lJ0_1);
+  ioBondGraph->connect(lJ0_1, lC2);
+  ioBondGraph->connect(lSf, lJ0_1);
+
+  std::cout << " PHS " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
+TEST(BondGraphSetup, Electrical) {
+  newWorkSpace();
+  // Expect two strings not to be equal.
+  auto ioBondGraph = phstest();
+}
+/*
 TEST(BondGraphSetup, Electrical) {
   newWorkSpace();
   // Expect two strings not to be equal.
@@ -213,3 +270,4 @@ TEST(BondGraphSetup, SupportedDomains) {
   auto sd = getSupportedPhysicalDomainsAndFactoryMethods();
   EXPECT_EQ(true, sd.contains("ElementDefinitions"));
 }
+*/

@@ -40,6 +40,8 @@ add_definitions(-DTHIRDPARTY_TEUCHOS)
 # SymEngine Requires boost multiprecision 1.77.0 or higher
 set(BG_BOOSTMP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/boostmp_1_77")
 
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/eigen/")
+
 # Link with Symengine
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/symengine")
 
@@ -151,6 +153,11 @@ if(WIN32)
   add_definitions(-DWIN_EXPORT)
 endif()
 
+if(MSVC)
+  # Required for PHS build
+  add_compile_options("/bigobj")
+endif()
+
 add_library(${PROJECT_NAME} SHARED ${SRC})
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/units/units)
@@ -161,6 +168,19 @@ target_include_directories(${PROJECT_NAME}
   PRIVATE
   ${CMAKE_CURRENT_BUILD_DIR}
   ${BG_BOOSTMP_INCLUDE_DIR}
+  ${EIGEN_INCLUDE_DIR}
+)
+
+add_executable(
+  phstest
+  phstest.cpp
+)
+
+target_link_libraries(phstest
+  teuchos
+  symengine
+  units-object
+  ${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE teuchos symengine units-object)
