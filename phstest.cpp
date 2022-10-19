@@ -19,6 +19,8 @@ RCPLIB::RCP<BondGraphInterface> phstest() {
   // Create the resistor
   auto lR = createResistor();
   ioBondGraph->addComponent(lR);
+  auto lR2 = createResistor();
+  ioBondGraph->addComponent(lR2);
 
   // Create the Transformer
   auto lTf = createTransformer();
@@ -37,6 +39,7 @@ RCPLIB::RCP<BondGraphInterface> phstest() {
 
   ioBondGraph->connect(lTf, 1, lJ0_1);
   ioBondGraph->connect(lJ0_1, lC2);
+  ioBondGraph->connect(lJ0_1, lR2);
   ioBondGraph->connect(lSf, lJ0_1);
 
   std::cout << " PHS " << std::endl;

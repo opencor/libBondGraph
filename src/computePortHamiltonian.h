@@ -4,7 +4,7 @@
 
 // Function gives (N x M) identity matrix
   auto giveIMatrix = [](int n, int m) {
-    auto id = SymbolixMatrix(n, m);
+    auto id = SymbolicMatrix(n, m);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < m; j++) {
         if (i == j) {
@@ -18,7 +18,7 @@
   };
 
   auto give0Matrix = [](int n, int m) {
-    auto id = SymbolixMatrix(n, m);
+    auto id = SymbolicMatrix(n, m);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < m; j++) {
         id(i, j) = SymEngine::Expression(SymEngine::zero);
@@ -27,9 +27,166 @@
     return id;
   };
 
+  auto getMatrixRank = [](SymbolicMatrix &mat) {
+    Eigen::MatrixX<float> R(mat.rows(), mat.cols());
+    for (int i = 0; i < mat.rows(); i++) {
+      for (int j = 0; j < mat.cols(); j++) {
+        if (!(mat(i, j).get_basic() == SymEngine::zero))
+          R(i, j) = 1.0;
+      }
+    }
+    Eigen::FullPivLU<Eigen::MatrixX<float>> lu_decomp(R);
+    return lu_decomp.rank();
+  };
 
+  // Function gives B (i) < - and B (i) ->
+  auto giveBondsInOut =
+      [&elementIndexs](
+          RCPLIB::RCP<BGElement> &element,
+          std::vector<std::tuple<RCPLIB::RCP<BGElement>,
+                                 RCPLIB::RCP<BGElement>>> &setBond) {
+        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+            bondIn;
+        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+            bondOut;
+
+        for (auto j = 0; j < setBond.size(); j++) {
+          RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
+          RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
+          auto eid = elementIndexs[element->getId()];
+          auto sid = elementIndexs[start->getId()];
+          auto fid = elementIndexs[finish->getId()];
+#ifdef DEBUG_PHS
+          std::cout << "Considering " << eid << " BGin " << sid << "x" << fid
+                    << std::endl;
+#endif
+          if (start->getId() ==
+              element->getId()) { // Bond is ingoing in element
+            bondOut.push_back(setBond.at(j));
+#ifdef DEBUG_PHS
+            std::cout << eid << " BGin " << sid << "x" << fid << std::endl;
+#endif
+          } else if (finish->getId() ==
+                     element->getId()) { // Bond is outgoing in element
+            bondIn.push_back(setBond.at(j));
+#ifdef DEBUG_PHS
+            std::cout << eid << " BGout " << sid << "x" << fid << std::endl;
+#endif
+          }
+        }
+        return std::make_tuple(bondIn, bondOut);
+      };
+
+  // Function gives set of incident bonds B(i)
+  auto giveBondsIncident =
+      [](RCPLIB::RCP<BGElement> &element,
+         std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+             &setBond) {
+        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+            setBi;
+        for (auto j = 0; j < setBond.size(); j++) {
+          RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
+          RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
+          if (start->getId() == element->getId() ||
+              finish->getId() ==
+                  element->getId()) { // bond j is incident to element i
+            setBi.push_back(setBond.at(j));
+          }
+        }
+        return setBi;
+      };
+
+  auto getEigenVectorIndex = [&vecFIC](SymEngine::Expression &elem) {
+    for (int x = 0; x < vecFIC.rows(); x++) {
+      if (vecFIC(x, 0) == elem) {
+        return x;
+      }
+    }
+    return -1;
+  };
 
 */
+
+static int getMatrixRank(SymbolicMatrix &mat) {
+  Eigen::MatrixX<float> R(mat.rows(), mat.cols());
+  for (int i = 0; i < mat.rows(); i++) {
+    for (int j = 0; j < mat.cols(); j++) {
+      if (!(mat(i, j).get_basic() == SymEngine::zero))
+        R(i, j) = 1.0;
+    }
+  }
+  Eigen::FullPivLU<Eigen::MatrixX<float>> lu_decomp(R);
+  return lu_decomp.rank();
+};
+
+// Function gives B (i) < - and B (i) ->
+static std::tuple<
+    std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>,
+    std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>>
+giveBondsInOut(
+    RCPLIB::RCP<BGElement> &element,
+    std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+        &setBond,
+    std::map<std::string, unsigned int> &elementIndexs) {
+  std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+      bondIn;
+  std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+      bondOut;
+
+  for (auto j = 0; j < setBond.size(); j++) {
+    RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
+    RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
+    auto eid = elementIndexs[element->getId()];
+    auto sid = elementIndexs[start->getId()];
+    auto fid = elementIndexs[finish->getId()];
+#ifdef DEBUG_PHS
+    std::cout << "Considering " << eid << " BGin " << sid << "x" << fid
+              << std::endl;
+#endif
+    if (start->getId() == element->getId()) { // Bond is ingoing in element
+      bondOut.push_back(setBond.at(j));
+#ifdef DEBUG_PHS
+      std::cout << eid << " BGin " << sid << "x" << fid << std::endl;
+#endif
+    } else if (finish->getId() ==
+               element->getId()) { // Bond is outgoing in element
+      bondIn.push_back(setBond.at(j));
+#ifdef DEBUG_PHS
+      std::cout << eid << " BGout " << sid << "x" << fid << std::endl;
+#endif
+    }
+  }
+  return std::make_tuple(bondIn, bondOut);
+};
+
+// Function gives set of incident bonds B(i)
+static std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+giveBondsIncident(
+    RCPLIB::RCP<BGElement> &element,
+    std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
+        &setBond) {
+  std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>> setBi;
+  for (auto j = 0; j < setBond.size(); j++) {
+    RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
+    RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
+    if (start->getId() == element->getId() ||
+        finish->getId() ==
+            element->getId()) { // bond j is incident to element i
+      setBi.push_back(setBond.at(j));
+    }
+  }
+  return setBi;
+};
+
+static int getEigenVectorIndex(SymEngine::Expression &elem,
+                               SymbolicMatrix &vecFIC) {
+  for (int x = 0; x < vecFIC.rows(); x++) {
+    if (vecFIC(x, 0) == elem) {
+      return x;
+    }
+  }
+  return -1;
+};
 
 void BondGraph::computePortHamiltonian() {
   std::vector<RCPLIB::RCP<BGElement>> connectedComponents;
@@ -46,14 +203,17 @@ void BondGraph::computePortHamiltonian() {
   }
 
   // Collect different types of elements
-  std::vector<RCPLIB::RCP<BGElement>> setVC;  // Storages
-  std::vector<RCPLIB::RCP<BGElement>> setVR;  // Dissipative elements
-  std::vector<RCPLIB::RCP<BGElement>> setVSf; // Flow sources
-  std::vector<RCPLIB::RCP<BGElement>> setVSe; // Effort sources
-  std::vector<RCPLIB::RCP<BGElement>> setV0;  // 0-Juntions
-  std::vector<RCPLIB::RCP<BGElement>> setV1;  // 1-Juntions
-  std::vector<RCPLIB::RCP<BGElement>> setVTF; // Transformers
-  std::vector<RCPLIB::RCP<BGElement>> setVGY; // Gyrators
+  std::vector<RCPLIB::RCP<BGElement>> setVC;     // Storages
+  std::vector<RCPLIB::RCP<BGElement>> setVConc;  // Concentrations
+  std::vector<RCPLIB::RCP<BGElement>> setVR;     // Dissipative elements
+  std::vector<RCPLIB::RCP<BGElement>> setVRe;    // Reactive elements
+  std::vector<RCPLIB::RCP<BGElement>> setVSf;    // Flow sources
+  std::vector<RCPLIB::RCP<BGElement>> setVSe;    // Effort sources
+  std::vector<RCPLIB::RCP<BGElement>> setV0;     // 0-Juntions
+  std::vector<RCPLIB::RCP<BGElement>> setV1;     // 1-Juntions
+  std::vector<RCPLIB::RCP<BGElement>> setVTF;    // Transformers
+  std::vector<RCPLIB::RCP<BGElement>> setVStoic; // Stoichiometry
+  std::vector<RCPLIB::RCP<BGElement>> setVGY;    // Gyrators
 
   for (auto &c : mComponents) { // Maintain order
     auto id = c->getId();
@@ -61,17 +221,27 @@ void BondGraph::computePortHamiltonian() {
       connectedComponents.push_back(compIDMap[id]);
       auto &mc = compIDMap[id];
       switch (mc->getType()) {
-      case bConcentration:
       case eCapacitance:
       case eInductance: {
         setVC.push_back(mc);
+        break;
+      }
+      case bConcentration: {
+        setVConc.push_back(mc);
+        break;
+      }
+      case bReaction: {
+        setVRe.push_back(mc);
         break;
       }
       case eResistance: {
         setVR.push_back(mc);
         break;
       }
-      case bReaction:
+      case bStoichiometry: {
+        setVStoic.push_back(mc);
+        break;
+      }
       case eTransformer: {
         setVTF.push_back(mc);
         break;
@@ -104,16 +274,19 @@ void BondGraph::computePortHamiltonian() {
       }
     }
   }
-  //[setV0, setV1, setVTF, setVGY]; // Interior elements
+  //[setV0, setV1, setVRe, setVStoic, setVTF, setVGY]; // Interior elements
   std::vector<RCPLIB::RCP<BGElement>> setVI;
   setVI.insert(std::end(setVI), std::begin(setV0), std::end(setV0));
   setVI.insert(std::end(setVI), std::begin(setV1), std::end(setV1));
+  setVI.insert(std::end(setVI), std::begin(setVRe), std::end(setVRe));
+  setVI.insert(std::end(setVI), std::begin(setVStoic), std::end(setVStoic));
   setVI.insert(std::end(setVI), std::begin(setVTF), std::end(setVTF));
   setVI.insert(std::end(setVI), std::begin(setVGY), std::end(setVGY));
 
   //[setVC, setVR, setVSf, setVSe]; // Exterior elements
   std::vector<RCPLIB::RCP<BGElement>> setVE;
   setVE.insert(std::end(setVE), std::begin(setVC), std::end(setVC));
+  setVE.insert(std::end(setVE), std::begin(setVConc), std::end(setVConc));
   setVE.insert(std::end(setVE), std::begin(setVR), std::end(setVR));
   setVE.insert(std::end(setVE), std::begin(setVSf), std::end(setVSf));
   setVE.insert(std::end(setVE), std::begin(setVSe), std::end(setVSe));
@@ -124,10 +297,10 @@ void BondGraph::computePortHamiltonian() {
   setV.insert(std::end(setV), std::begin(setVE), std::end(setVE));
 
   // Element count
-  int numNC = setVC.size();   // Number of storages
-  int numNR = setVR.size();   // Number of dissipative elements
-  int numNSf = setVSf.size(); // Number of flow sources
-  int numNSe = setVSe.size(); // Number of effort sources
+  int numNC = setVC.size() + setVConc.size(); // Number of storages
+  int numNR = setVR.size();                   // Number of dissipative elements
+  int numNSf = setVSf.size();                 // Number of flow sources
+  int numNSe = setVSe.size();                 // Number of effort sources
   int numNS = numNSf + numNSe;
   int numNI = setVI.size(); // Number of interior elements
   int numNE = setVE.size(); // Number of exterior elements
@@ -238,66 +411,9 @@ void BondGraph::computePortHamiltonian() {
 
   unsigned int numMI = setBI.size(); // Number of interior multi bonds m_I
   unsigned int numME = setVE.size(); // Number of exterior multi bonds m_E
-  // Function gives B (i) < - and B (i) ->
-  auto giveBondsInOut =
-      [&elementIndexs](
-          RCPLIB::RCP<BGElement> &element,
-          std::vector<std::tuple<RCPLIB::RCP<BGElement>,
-                                 RCPLIB::RCP<BGElement>>> &setBond) {
-        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
-            bondIn;
-        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
-            bondOut;
-
-        for (auto j = 0; j < setBond.size(); j++) {
-          RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
-          RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
-          auto eid = elementIndexs[element->getId()];
-          auto sid = elementIndexs[start->getId()];
-          auto fid = elementIndexs[finish->getId()];
-#ifdef DEBUG_PHS
-          std::cout << "Considering " << eid << " BGin " << sid << "x" << fid
-                    << std::endl;
-#endif
-          if (start->getId() ==
-              element->getId()) { // Bond is ingoing in element
-            bondOut.push_back(setBond.at(j));
-#ifdef DEBUG_PHS
-            std::cout << eid << " BGin " << sid << "x" << fid << std::endl;
-#endif
-          } else if (finish->getId() ==
-                     element->getId()) { // Bond is outgoing in element
-            bondIn.push_back(setBond.at(j));
-#ifdef DEBUG_PHS
-            std::cout << eid << " BGout " << sid << "x" << fid << std::endl;
-#endif
-          }
-        }
-        return std::make_tuple(bondIn, bondOut);
-      };
-
-  // Function gives set of incident bonds B(i)
-  auto giveBondsIncident =
-      [](RCPLIB::RCP<BGElement> &element,
-         std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
-             &setBond) {
-        std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
-            setBi;
-        for (auto j = 0; j < setBond.size(); j++) {
-          RCPLIB::RCP<BGElement> &start = std::get<0>(setBond.at(j));
-          RCPLIB::RCP<BGElement> &finish = std::get<1>(setBond.at(j));
-          if (start->getId() == element->getId() ||
-              finish->getId() ==
-                  element->getId()) { // bond j is incident to element i
-            setBi.push_back(setBond.at(j));
-          }
-        }
-        return setBi;
-      };
-
   // Definition of Dirac structures for each interior element
   std::map<std::string, std::vector<int>> setDirac_; // Store the flow indexes
-  std::map<std::string, std::map<int, SymbolixMatrix>> setDirac;
+  std::map<std::string, std::map<int, SymbolicMatrix>> setDirac;
 
   unsigned int bidx = 0;
   for (auto &b : setBI) {
@@ -326,11 +442,11 @@ void BondGraph::computePortHamiltonian() {
         bondsIn;
     std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
         bondsOut;
-    std::tie(bondsIn, bondsOut) = giveBondsInOut(ie, setB);
+    std::tie(bondsIn, bondsOut) = giveBondsInOut(ie, setB, elementIndexs);
     std::vector<std::string> flows;
     std::vector<int> flowNum; // The bond number
     std::vector<std::string> efforts;
-    std::map<int, SymbolixMatrix> dirac;
+    std::map<int, SymbolicMatrix> dirac;
 
     for (auto &bnd : bondsIn) {
       RCPLIB::RCP<BGElement> &e1 = std::get<0>(bnd);
@@ -353,11 +469,11 @@ void BondGraph::computePortHamiltonian() {
       efforts.push_back("e_" + bnd);
     }
     setDirac_[ie->getId()] = flowNum;
-    SymbolixMatrix Fi(flows.size(), 1);
+    SymbolicMatrix Fi(flows.size(), 1);
     for (int f = 0; f < flows.size(); f++) {
       Fi(f, 0) = SymEngine::parse(flows.at(f));
     }
-    SymbolixMatrix Ei(efforts.size(), 1);
+    SymbolicMatrix Ei(efforts.size(), 1);
     for (int e = 0; e < efforts.size(); e++) {
       Ei(e, 0) = SymEngine::parse(efforts.at(e));
     }
@@ -381,9 +497,9 @@ void BondGraph::computePortHamiltonian() {
     std::vector<std::string> EMat;
     // Define F-matrix
     int n = bin.size();
-    SymbolixMatrix Fi(n, n);
+    SymbolicMatrix Fi(n, n);
     for (int i = 0; i < n; i++) {
-      Fi(0, i) = SymEngine::Expression(SymEngine::one);
+      Fi(0, i) = symOne;
     }
 #ifdef DEBUG_PHS
     std::cout << " Zero junction " << n << std::endl;
@@ -391,9 +507,9 @@ void BondGraph::computePortHamiltonian() {
     std::cout << Fi << std::endl;
 #endif
     // Define E-matrix
-    SymbolixMatrix Ei(n, n);
+    SymbolicMatrix Ei(n, n);
     for (int i = 1; i < n; i++) {
-      Ei(i, 0) = SymEngine::Expression(SymEngine::one);
+      Ei(i, 0) = symOne;
       for (int j = 1; j < n; j++) {
         if (i == j)
           Ei(i, j) = symNegOne;
@@ -412,17 +528,17 @@ void BondGraph::computePortHamiltonian() {
         bondsIn;
     std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
         bondsOut;
-    std::tie(bondsIn, bondsOut) = giveBondsInOut(ie, setB);
+    std::tie(bondsIn, bondsOut) = giveBondsInOut(ie, setB, elementIndexs);
     auto mIni = bondsIn.size();   // Number of ingoing bonds in element ie
     auto mOuti = bondsOut.size(); // Number of outgoing bonds of element ie
     auto mi = mIni + mOuti;
 
-    SymbolixMatrix matTi(mi, mi);
+    SymbolicMatrix matTi(mi, mi);
     for (int i = 0; i < mi; i++) {
       for (int j = 0; j < mi; j++) {
         if (i == j) {
           if (i < mIni) {
-            matTi(i, j) = SymEngine::Expression(SymEngine::one);
+            matTi(i, j) = symOne;
           } else {
             matTi(i, j) = symNegOne;
           }
@@ -430,18 +546,18 @@ void BondGraph::computePortHamiltonian() {
       }
     }
 
-    SymbolixMatrix thetaI(mi, mi);
+    SymbolicMatrix thetaI(mi, mi);
     thetaI.fill(symZero);
     for (int i = 1; i < mi; i++) {
-      thetaI(i, 0) = SymEngine::Expression(SymEngine::one);
+      thetaI(i, 0) = symOne;
       for (int j = 1; j < mi; j++) {
         if (i == j)
           thetaI(i, j) = symNegOne;
       }
     }
-    SymbolixMatrix phiI(mi, mi);
+    SymbolicMatrix phiI(mi, mi);
     for (int i = 0; i < mi; i++) {
-      phiI(0, i) = SymEngine::Expression(SymEngine::one);
+      phiI(0, i) = symOne;
     }
     // F Matrix
     auto Fi = thetaI * matTi;
@@ -458,6 +574,60 @@ void BondGraph::computePortHamiltonian() {
     setDirac[ie->getId()][2] = Ei;
   }
 
+  // for all Reaction-elements
+  // Constitutive equations are of the form f_0 + f_1 = 0; f0 -
+  // r(exp(e_0/RT)-exp(e_1/RT)) = 0; F matrix is of the form {{1,1}, {1,0}}, E
+  // matrix is of the form {{0,0},{-activity(e_0,r),activity(e_1,r)}}. Here
+  // activity(x,y) = y*exp(x/RT) To satisfy F*f + E*e = 0 with f = {f_0,f_1} and
+  // e = {e_0,e_1}; activity of a chemical is given by a = exp(\mu/RT), where
+  // \mu is the chemical potential
+  for (auto &ie : setVRe) {
+    int numStates = ie->getNumStates();
+    auto values = ie->values();
+    std::string pname = std::get<1>(values[numStates])->name + "_" +
+                        std::to_string(elementIndexs[ie->getId()]);
+
+    SymbolicMatrix Fi(2, 2);
+    auto p = SymEngine::symbol(pname);
+    Fi(0, 0) = symOne;
+    Fi(0, 1) = symOne;
+    Fi(1, 0) = symOne;
+
+    SymbolicMatrix Ei(2, 2);
+
+    Ei(1, 0) = SymEngine::neg(
+        SymEngine::function_symbol("activity_" + ie->getId(), p));
+    Ei(1, 0) = SymEngine::function_symbol("activity_" + ie->getId(), p);
+
+    setDirac[ie->getId()][0] = Fi;
+    setDirac[ie->getId()][2] = Ei;
+  }
+
+  // for all Stoichiometry-elements
+  // Constitutive equations are of the form f_0/r0 - f_1/r1 = 0; r0 * e_0 + r1 *
+  // e_1 = 0; F matrix is of the form {{1/r0,-1/r1}, {0,0}}, E matrix is of the
+  // form {{0,0},{r0,r1}}.
+
+  for (auto &ie : setVStoic) {
+    int numStates = ie->getNumStates();
+    auto values = ie->values();
+    std::string pname1 = std::get<1>(values[numStates])->name + "_" +
+                         std::to_string(elementIndexs[ie->getId()]);
+    std::string pname2 = std::get<1>(values[numStates + 1])->name + "_" +
+                         std::to_string(elementIndexs[ie->getId()]);
+
+    SymbolicMatrix Fi(2, 2);
+    Fi(0, 0) = SymEngine::parse(pname1);
+    Fi(0, 1) = SymEngine::parse("-" + pname2);
+
+    SymbolicMatrix Ei(2, 2);
+    Ei(1, 0) = SymEngine::parse(pname1);
+    Ei(1, 1) = SymEngine::parse(pname2);
+
+    setDirac[ie->getId()][0] = Fi;
+    setDirac[ie->getId()][2] = Ei;
+  }
+
   // for all TF-elements
   for (auto &ie : setVTF) {
     int numStates = ie->getNumStates();
@@ -465,11 +635,11 @@ void BondGraph::computePortHamiltonian() {
     std::string pname = std::get<1>(values[numStates])->name + "_" +
                         std::to_string(elementIndexs[ie->getId()]);
 
-    SymbolixMatrix Fi(2, 2);
+    SymbolicMatrix Fi(2, 2);
     Fi(0, 0) = symOne;
     Fi(0, 1) = SymEngine::parse(pname);
 
-    SymbolixMatrix Ei(2, 2);
+    SymbolicMatrix Ei(2, 2);
     Ei(1, 1) = symOne;
     Ei(1, 0) = SymEngine::parse("-" + pname);
 
@@ -484,11 +654,12 @@ void BondGraph::computePortHamiltonian() {
     std::string pname = std::get<1>(values[numStates])->name + "_" +
                         std::to_string(elementIndexs[ie->getId()]);
 
-    SymbolixMatrix Fi(2, 2);
+    SymbolicMatrix Fi(2, 2);
+
     Fi(0, 1) = SymEngine::parse(pname);
     Fi(1, 0) = SymEngine::parse("-" + pname);
 
-    SymbolixMatrix Ei(2, 2);
+    SymbolicMatrix Ei(2, 2);
     Ei(0, 0) = symOne;
     Ei(1, 1) = symOne;
 
@@ -501,26 +672,22 @@ void BondGraph::computePortHamiltonian() {
 
   std::vector<int> setBEidx;
   std::vector<int> setBIidx;
-  // std::cout << " set BE ";
+
   for (auto &bnd : setBE) {
     RCPLIB::RCP<BGElement> &e1 = std::get<0>(bnd);
     RCPLIB::RCP<BGElement> &e2 = std::get<1>(bnd);
     std::string bnd = std::to_string(elementIndexs[e1->getId()]) + "_" +
                       std::to_string(elementIndexs[e2->getId()]);
     setBEidx.push_back(bondIndexs[bnd]);
-    // std::cout << bnd << " ";
   }
-  // std::cout << std::endl;
-  // std::cout << " set BI ";
+
   for (auto &bnd : setBI) {
     RCPLIB::RCP<BGElement> &e1 = std::get<0>(bnd);
     RCPLIB::RCP<BGElement> &e2 = std::get<1>(bnd);
     std::string bnd = std::to_string(elementIndexs[e1->getId()]) + "_" +
                       std::to_string(elementIndexs[e2->getId()]);
     setBIidx.push_back(bondIndexs[bnd]);
-    // std::cout << bnd << " ";
   }
-  std::cout << std::endl;
 
 #ifdef DEBUG_PHS
   // Inverse map of bond id to bond name, used for debugging
@@ -574,7 +741,7 @@ void BondGraph::computePortHamiltonian() {
     }
     std::cout << std::endl;
 #endif
-    auto matT = SymbolixMatrix(currentVectori.size(), currentVectori.size());
+    auto matT = SymbolicMatrix(currentVectori.size(), currentVectori.size());
     matT.fill(symZero);
     for (int ci = 0; ci < currentVectori.size(); ci++) {
       auto cvi = currentVectori[ci];
@@ -585,7 +752,7 @@ void BondGraph::computePortHamiltonian() {
         matT(mi, ci) = symOne;
       }
     }
-    // setDirac[eid][-1] = matT;
+
     auto Fi = setDirac[eid][0];
     auto fi = setDirac[eid][1];
     auto Ei = setDirac[eid][2];
@@ -621,8 +788,8 @@ void BondGraph::computePortHamiltonian() {
 
   // Compute D_IC
   int sBIsize = setBI.size();
-  SymbolixMatrix vecFK(sBIsize * 2, 1);
-  SymbolixMatrix vecEK(sBIsize * 2, 1);
+  SymbolicMatrix vecFK(sBIsize * 2, 1);
+  SymbolicMatrix vecEK(sBIsize * 2, 1);
   int vix = 0;
   for (auto &bnd : setBI) {
     RCPLIB::RCP<BGElement> &e1 = std::get<0>(bnd);
@@ -638,12 +805,20 @@ void BondGraph::computePortHamiltonian() {
   }
 
   std::vector<std::string> setDiracKeys;
-  // Ensure the order 0, 1, TF, GY
+  // Ensure the order 0, 1, Re, Stoic, TF, GY
   for (auto &ie : setV0) {
     setDiracKeys.push_back(ie->getId());
   }
 
   for (auto &ie : setV1) {
+    setDiracKeys.push_back(ie->getId());
+  }
+
+  for (auto &ie : setVRe) {
+    setDiracKeys.push_back(ie->getId());
+  }
+
+  for (auto &ie : setVStoic) {
     setDiracKeys.push_back(ie->getId());
   }
 
@@ -655,25 +830,17 @@ void BondGraph::computePortHamiltonian() {
     setDiracKeys.push_back(ie->getId());
   }
 
-  SymbolixMatrix vecFIC(setDirac[setDiracKeys.at(0)][1]);
+  SymbolicMatrix vecFIC(setDirac[setDiracKeys.at(0)][1]);
 
   for (int i = 1; i < setDiracKeys.size(); i++) {
-    SymbolixMatrix v = setDirac[setDiracKeys.at(i)][1];
-    SymbolixMatrix cv(vecFIC.rows() + v.rows(), 1);
+    SymbolicMatrix v = setDirac[setDiracKeys.at(i)][1];
+    SymbolicMatrix cv(vecFIC.rows() + v.rows(), 1);
     cv << vecFIC, v;
     vecFIC = cv;
   }
 
   // Get the permutation matrix for rearranging rows to follow the order
   // in which the flows appear in setBI
-  auto getEigenVectorIndex = [&vecFIC](SymEngine::Expression &elem) {
-    for (int x = 0; x < vecFIC.rows(); x++) {
-      if (vecFIC(x, 0) == elem) {
-        return x;
-      }
-    }
-    return -1;
-  };
 
 #ifdef DEBUG_PHS
   std::cout << vecFK << std::endl << std::endl;
@@ -683,12 +850,13 @@ void BondGraph::computePortHamiltonian() {
   std::vector<int> forder;
   std::vector<int> sorder;
   for (int ci = 0; ci < sBIsize * 2; ci++) {
-    int it = getEigenVectorIndex(vecFK(ci, 0));
+    int it = getEigenVectorIndex(vecFK(ci, 0), vecFIC);
     if (it != -1) {
       forder.push_back(it);
       sorder.push_back(it);
     } else {
       // Error report
+      logDebug("Error finding the corresponding eigen vector !!");
     }
   }
   // Get the sorted index
@@ -699,15 +867,15 @@ void BondGraph::computePortHamiltonian() {
     auto it = std::find(sorder.begin(), sorder.end(), v) - sorder.begin();
     sindex[ci] = it;
   }
-  auto vmatT = SymbolixMatrix(sBIsize * 2, sBIsize * 2);
+  auto vmatT = SymbolicMatrix(sBIsize * 2, sBIsize * 2);
   vmatT.fill(symZero);
 
   for (int ci = 0; ci < sBIsize * 2; ci++) {
     vmatT(sindex[ci], ci) = symOne;
   }
 
-  SymbolixMatrix matFIC(2 * numMI, 2 * numMI);
-  SymbolixMatrix matEIC(2 * numMI, 2 * numMI);
+  SymbolicMatrix matFIC(2 * numMI, 2 * numMI);
+  SymbolicMatrix matEIC(2 * numMI, 2 * numMI);
   matFIC.fill(symZero);
   matEIC.fill(symZero);
   auto &I1 = matFIC.block(0, 0, numMI, numMI);
@@ -743,8 +911,8 @@ void BondGraph::computePortHamiltonian() {
 
   // Initialize matrices F_IC(i) and E_IC(i) of interconnection Dirac structure
 
-  std::map<std::string, SymbolixMatrix> matFICi;
-  std::map<std::string, SymbolixMatrix> matEICi;
+  std::map<std::string, SymbolicMatrix> matFICi;
+  std::map<std::string, SymbolicMatrix> matEICi;
   unsigned int im = 0;
 
   for (auto &c : setDiracKeys) {
@@ -767,20 +935,22 @@ void BondGraph::computePortHamiltonian() {
   }
 
   // matrices M^T (i)
-  std::map<std::string, SymbolixMatrix> matMTi;
+  std::map<std::string, SymbolicMatrix> matMTi;
   int numCols = 0; // The number of columns for Gamma matrix
   for (auto &c : setDiracKeys) {
     auto sdf = setDirac[c][0].transpose();
     auto sde = setDirac[c][2].transpose();
     std::vector<unsigned int> ind;
-    for (int ci = 0; ci < setNumME[c]; ci++)
+    for (int ci = 0; ci < setNumME[c]; ci++) {
       ind.push_back(ci);
+    }
 
     setDirac[c][4] = sdf(ind, Eigen::placeholders::all);
     setDirac[c][6] = sde(ind, Eigen::placeholders::all);
     ind.clear();
-    for (int ci = setNumME[c]; ci < sdf.rows(); ci++)
+    for (int ci = setNumME[c]; ci < sdf.rows(); ci++) {
       ind.push_back(ci);
+    }
     setDirac[c][5] = sdf(ind, Eigen::placeholders::all);
     setDirac[c][7] = sde(ind, Eigen::placeholders::all);
     matMTi[c] = matFICi[c] * setDirac[c][7] + matEICi[c] * setDirac[c][5];
@@ -797,7 +967,7 @@ void BondGraph::computePortHamiltonian() {
 
     numCols += matMTi[c].cols();
   }
-  SymbolixMatrix matMT(2 * numMI, numCols);
+  SymbolicMatrix matMT(2 * numMI, numCols);
   int colCounter = 0;
   for (auto &c : setDiracKeys) {
     int nCols = matMTi[c].cols();
@@ -815,6 +985,7 @@ void BondGraph::computePortHamiltonian() {
       s_MT.set(r, c, matMT(r, c));
     }
   }
+
   SymEngine::vec_uint pivots;
   SymEngine::reduced_row_echelon_form(s_MT, reduced, pivots);
 
@@ -841,8 +1012,8 @@ void BondGraph::computePortHamiltonian() {
   }
   // The order of free_variables is revered in the mathematica code/ paper
   // example So following it through
-  SymbolixMatrix matL(matMT.rows(), matMT.cols());
   int numBasis = basis.size();
+  SymbolicMatrix matL(numBasis, matMT.cols());
   for (int i = 0; i < numBasis; i++) {
     SymEngine::vec_basic &vec = basis.back();
     for (int j = 0; j < vec.size(); j++) {
@@ -852,51 +1023,53 @@ void BondGraph::computePortHamiltonian() {
   }
 
   // Extract block matrices L (i) from L
-  std::map<std::string, SymbolixMatrix> matLi;
+  std::map<std::string, SymbolicMatrix> matLi;
   colCounter = 0;
   for (auto &c : setDiracKeys) {
     std::vector<unsigned int> ind;
-    for (int ci = 0; ci < setNumM[c]; ci++)
+    for (int ci = 0; ci < setNumM[c]; ci++) {
       ind.push_back(ci + colCounter);
+    }
     matLi[c] = matL(Eigen::placeholders::all, ind);
     colCounter += setNumM[c];
   }
 
-  std::map<int, SymbolixMatrix> dirac;
+  std::map<int, SymbolicMatrix> dirac;
   for (auto &c : setDiracKeys) {
     if (setNumME[c] > 0) {
 
       auto dr1 = matLi[c] * (setDirac[c][4].transpose());
       auto dr3 = matLi[c] * (setDirac[c][6].transpose());
       std::vector<unsigned int> ind;
-      for (int ci = 0; ci < setNumME[c]; ci++)
+      for (int ci = 0; ci < setNumME[c]; ci++) {
         ind.push_back(ci);
+      }
       auto dr2 = setDirac[c][1](ind, Eigen::placeholders::all);
       auto dr4 = setDirac[c][3](ind, Eigen::placeholders::all);
 
       if (dirac.find(1) != dirac.end()) {
-        SymbolixMatrix newm(dirac[1].rows(), dirac[1].cols() + dr1.cols());
+        SymbolicMatrix newm(dirac[1].rows(), dirac[1].cols() + dr1.cols());
         newm << dirac[1], dr1;
         dirac[1] = newm;
       } else {
         dirac[1] = dr1;
       }
       if (dirac.find(3) != dirac.end()) {
-        SymbolixMatrix newm(dirac[3].rows(), dirac[3].cols() + dr1.cols());
+        SymbolicMatrix newm(dirac[3].rows(), dirac[3].cols() + dr1.cols());
         newm << dirac[3], dr3;
         dirac[3] = newm;
       } else {
         dirac[3] = dr3;
       }
       if (dirac.find(2) != dirac.end()) {
-        SymbolixMatrix newm(dirac[2].rows() + dr2.rows(), dirac[2].cols());
+        SymbolicMatrix newm(dirac[2].rows() + dr2.rows(), dirac[2].cols());
         newm << dirac[2], dr2;
         dirac[2] = newm;
       } else {
         dirac[2] = dr2;
       }
       if (dirac.find(4) != dirac.end()) {
-        SymbolixMatrix newm(dirac[4].rows() + dr4.rows(), dirac[4].cols());
+        SymbolicMatrix newm(dirac[4].rows() + dr4.rows(), dirac[4].cols());
 
         newm << dirac[4], dr4;
         dirac[4] = newm;
@@ -915,14 +1088,14 @@ void BondGraph::computePortHamiltonian() {
 
   // Compute permuation matrix T
   std::vector<std::string> dvec;
-  SymbolixMatrix &no = dirac[2];
+  SymbolicMatrix &no = dirac[2];
   for (int i = 0; i < no.rows(); i++) {
     std::string c = no(i, 0).get_basic()->__str__();
     auto loc = c.find('_');
     dvec.push_back(c.substr(loc + 1, c.size()));
   }
 
-  SymbolixMatrix matT(dvec.size(), dvec.size());
+  SymbolicMatrix matT(dvec.size(), dvec.size());
   std::vector<std::string> wantedVector;
   std::vector<std::string> setBEbnd;
   std::vector<std::string> setBIbnd;
@@ -956,7 +1129,7 @@ void BondGraph::computePortHamiltonian() {
       wantedVector.push_back(*ix);
   }
 
-  auto matTd = SymbolixMatrix(dvec.size(), dvec.size());
+  auto matTd = SymbolicMatrix(dvec.size(), dvec.size());
   matTd.fill(symZero);
   for (int ci = 0; ci < dvec.size(); ci++) {
     auto cvi = dvec[ci];
@@ -988,18 +1161,6 @@ void BondGraph::computePortHamiltonian() {
             << dr4 << std::endl;
 #endif
 
-  auto getMatrixRank = [](SymbolixMatrix &mat) {
-    Eigen::MatrixX<float> R(mat.rows(), mat.cols());
-    for (int i = 0; i < mat.rows(); i++) {
-      for (int j = 0; j < mat.cols(); j++) {
-        if (!(mat(i, j) == SymEngine::Expression("0")))
-          R(i, j) = 1.0;
-      }
-    }
-    Eigen::FullPivLU<Eigen::MatrixX<float>> lu_decomp(R);
-    return lu_decomp.rank();
-  };
-
 #ifdef CHECK_DEPENDEND_SOURCES
   // Expensive tests - ignore if possible
   // Test Assumption rank(E_Sf | F_Se) = N(nSf + nSe)
@@ -1015,12 +1176,12 @@ void BondGraph::computePortHamiltonian() {
     for (int i = 0; i < numNSe; i++) {
       ind.push_back(offset + i);
     }
-    auto F_Se = SymbolixMatrix(0, 0);
+    auto F_Se = SymbolicMatrix(0, 0);
     Eigen::MatrixX<float> dm;
     int rank = 0;
     if (ind.size() > 0) {
       F_Se = dirac[1](Eigen::placeholders::all, ind);
-      SymbolixMatrix ss(E_Sf.rows(), E_Sf.cols() + F_Se.cols());
+      SymbolicMatrix ss(E_Sf.rows(), E_Sf.cols() + F_Se.cols());
       ss << E_Sf, F_Se;
       dm = Eigen::MatrixX<float>(ss.rows(), ss.cols());
       for (int r = 0; r < ss.rows(); r++) {
@@ -1087,11 +1248,12 @@ void BondGraph::computePortHamiltonian() {
   std::vector<int> ind;
   if (numNR > 0) {
     // Calculate accumulated number of elements {nC, nC + nR, ...}
-    numNEAcc.push_back(setVC.size());
-    numNEAcc.push_back(setVC.size() + setVR.size());
-    numNEAcc.push_back(setVC.size() + setVR.size() + setVSf.size());
-    numNEAcc.push_back(setVC.size() + setVR.size() + setVSf.size() +
-                       setVSe.size());
+    numNEAcc.push_back(setVC.size() + setVConc.size());
+    numNEAcc.push_back(setVC.size() + setVConc.size() + setVR.size());
+    numNEAcc.push_back(setVC.size() + setVConc.size() + setVR.size() +
+                       setVSf.size());
+    numNEAcc.push_back(setVC.size() + setVConc.size() + setVR.size() +
+                       setVSf.size() + setVSe.size());
 
     // Concatenate block matrices to matPartZ1 = {F_C, E_Sf, F_Se}
     ind.clear();
@@ -1107,7 +1269,7 @@ void BondGraph::computePortHamiltonian() {
       ind.push_back(i);
     auto F_Se = dirac[1](Eigen::placeholders::all, ind);
 
-    SymbolixMatrix matPartZ1(F_C.rows(),
+    SymbolicMatrix matPartZ1(F_C.rows(),
                              F_C.cols() + E_Sf.cols() + F_Se.cols());
     matPartZ1 << F_C, E_Sf, F_Se;
     int rank = getMatrixRank(matPartZ1);
@@ -1117,7 +1279,7 @@ void BondGraph::computePortHamiltonian() {
       ind.clear();
       ind.push_back(iR);
       auto matPart2 = dirac[1](Eigen::placeholders::all, ind);
-      SymbolixMatrix augPart(matPartZ1.rows(),
+      SymbolicMatrix augPart(matPartZ1.rows(),
                              matPartZ1.cols() + matPart2.cols());
       augPart << matPartZ1, matPart2;
       auto arank = getMatrixRank(augPart);
@@ -1150,7 +1312,7 @@ void BondGraph::computePortHamiltonian() {
       wantedVector.push_back(vecFAbs[c]);
     }
 
-    auto matTR = SymbolixMatrix(currentVector.size(), currentVector.size());
+    auto matTR = SymbolicMatrix(currentVector.size(), currentVector.size());
     matTR.fill(symZero);
     for (int ci = 0; ci < currentVector.size(); ci++) {
       auto cvi = currentVector[ci];
@@ -1162,12 +1324,12 @@ void BondGraph::computePortHamiltonian() {
       }
     }
 
-    SymbolixMatrix matT(numNEAcc[3], numNEAcc[3]);
+    SymbolicMatrix matT(numNEAcc[3], numNEAcc[3]);
     matT.fill(symZero);
     for (int i = 0; i < numNEAcc[3]; i++)
       matT(i, i) = symOne;
-    matT.block(numNEAcc[0], numNEAcc[1] - 1, numNEAcc[0] - 1, numNEAcc[1] - 2) =
-        matTR;
+
+    matT.block(numNEAcc[0], numNEAcc[0], matTR.rows(), matTR.cols()) = matTR;
 
     auto dr1 = dirac[1] * matT.transpose();
     auto dr3 = dirac[3] * matT.transpose();
@@ -1179,16 +1341,17 @@ void BondGraph::computePortHamiltonian() {
     dirac[4] = dr4;
   }
 
-  std::map<int, SymbolixMatrix> diracEx;
+  std::map<int, SymbolicMatrix> diracEx;
   numNEAcc.clear();
   // Calculate accumulated number of elements {nC, nC + nR1, ...}
-  numNEAcc.push_back(setVC.size());
-  numNEAcc.push_back(setVC.size() + posR1.size());
-  numNEAcc.push_back(setVC.size() + posR1.size() + posR2.size());
-  numNEAcc.push_back(setVC.size() + posR1.size() + posR2.size() +
-                     setVSf.size());
-  numNEAcc.push_back(setVC.size() + posR1.size() + posR2.size() +
-                     setVSf.size() + setVSe.size());
+  numNEAcc.push_back(setVC.size() + setVConc.size());
+  numNEAcc.push_back(setVC.size() + setVConc.size() + posR1.size());
+  numNEAcc.push_back(setVC.size() + setVConc.size() + posR1.size() +
+                     posR2.size());
+  numNEAcc.push_back(setVC.size() + setVConc.size() + posR1.size() +
+                     posR2.size() + setVSf.size());
+  numNEAcc.push_back(setVC.size() + setVConc.size() + posR1.size() +
+                     posR2.size() + setVSf.size() + setVSe.size());
 
   // Concatenate vector veyY = {f_C, f_R1, e_R2, e_Sf, f_Se}
   ind.clear();
@@ -1212,7 +1375,7 @@ void BondGraph::computePortHamiltonian() {
     ind.push_back(i);
   auto f_Se = dirac[2](ind, Eigen::placeholders::all);
 
-  SymbolixMatrix dex1(
+  SymbolicMatrix dex1(
       f_C.rows() + f_R1.rows() + e_R2.rows() + e_Sf.rows() + f_Se.rows(), 1);
   dex1 << f_C, f_R1, e_R2, e_Sf, f_Se;
   diracEx[1] = dex1;
@@ -1238,7 +1401,7 @@ void BondGraph::computePortHamiltonian() {
     ind.push_back(i);
   auto e_Se = dirac[4](ind, Eigen::placeholders::all);
 
-  SymbolixMatrix dex3(
+  SymbolicMatrix dex3(
       e_C.rows() + e_R1.rows() + f_R2.rows() + f_Sf.rows() + e_Se.rows(), 1);
   dex3 << e_C, e_R1, f_R2, f_Sf, e_Se;
   diracEx[3] = dex3;
@@ -1265,7 +1428,7 @@ void BondGraph::computePortHamiltonian() {
     ind.push_back(i);
   auto F_Se = dirac[1](Eigen::placeholders::all, ind);
 
-  SymbolixMatrix matZ1(F_C.rows(), F_C.cols() + F_R1.cols() + E_R2.cols() +
+  SymbolicMatrix matZ1(F_C.rows(), F_C.cols() + F_R1.cols() + E_R2.cols() +
                                        E_Sf.cols() + F_Se.cols());
   matZ1 << F_C, F_R1, E_R2, E_Sf, F_Se;
   // Concatenate block matrices to matZ2 = {E_C, E_R1, F_R2, F_Sf, E_Se}
@@ -1290,7 +1453,7 @@ void BondGraph::computePortHamiltonian() {
     ind.push_back(i);
   auto E_Se = dirac[3](Eigen::placeholders::all, ind);
 
-  SymbolixMatrix matZ2(E_C.rows(), E_C.cols() + E_R1.cols() + F_R2.cols() +
+  SymbolicMatrix matZ2(E_C.rows(), E_C.cols() + E_R1.cols() + F_R2.cols() +
                                        F_Sf.cols() + E_Se.cols());
   matZ2 << E_C, E_R1, F_R2, F_Sf, E_Se;
 
@@ -1310,7 +1473,7 @@ void BondGraph::computePortHamiltonian() {
   SymEngine::DenseMatrix Z1invProdZ2(matZ1.rows(), matZ1.cols());
   Z1.inv(Z1inv);
   Z1inv.mul_matrix(Z2, Z1invProdZ2);
-  SymbolixMatrix drex3(matZ1.rows(), matZ1.cols());
+  SymbolicMatrix drex3(matZ1.rows(), matZ1.cols());
   for (int i = 0; i < matZ1.rows(); i++) {
     for (int j = 0; j < matZ1.cols(); j++) {
       SymEngine::Expression expr = Z1invProdZ2.get(i, j);
@@ -1322,11 +1485,7 @@ void BondGraph::computePortHamiltonian() {
   auto numC = numNEAcc[0];               // Number of storages
   auto numR = numNEAcc[2] - numNEAcc[0]; // Number of resistors
   auto numS = numNEAcc[4] - numNEAcc[2]; // Number of sources
-  std::cout << "numC " << numC << std::endl;
-  std::cout << "numR " << numR << std::endl;
-  std::cout << "numS " << numS << std::endl;
 
-  std::cout << drex3 << std::endl;
   auto zCC = drex3.block(0, 0, numC, numC);
   auto zCR = -drex3.block(0, numC, numC, numR);
   auto zCP = -drex3.block(0, drex3.cols() - numS, numC, numS);
@@ -1334,7 +1493,7 @@ void BondGraph::computePortHamiltonian() {
   auto zRP = -drex3.block(numC, drex3.cols() - numS, numR, numS);
   auto zPP = drex3.block(drex3.rows() - numS, drex3.cols() - numS, numS, numS);
 
-#ifdef DEBUG_PHS
+#ifndef DEBUG_PHS
   std::cout << " zCC \n" << zCC << std::endl;
   std::cout << " zCR \n" << zCR << std::endl;
   std::cout << " zCP \n" << zCP << std::endl;
@@ -1342,18 +1501,18 @@ void BondGraph::computePortHamiltonian() {
   std::cout << " zRP \n" << zRP << std::endl;
   std::cout << " zPP \n" << zPP << std::endl;
 #endif
-  SymbolixMatrix matA;
-  SymbolixMatrix matK;
-  SymbolixMatrix matB;
-  SymbolixMatrix matJ;
-  SymbolixMatrix matR;
-  SymbolixMatrix matG;
-  SymbolixMatrix matP;
-  SymbolixMatrix matPT;
-  SymbolixMatrix matM;
-  SymbolixMatrix matS;
-  SymbolixMatrix vecY;
-  SymbolixMatrix vecU;
+  SymbolicMatrix matA;
+  SymbolicMatrix matK;
+  SymbolicMatrix matB;
+  SymbolicMatrix matJ;
+  SymbolicMatrix matR;
+  SymbolicMatrix matG;
+  SymbolicMatrix matP;
+  SymbolicMatrix matPT;
+  SymbolicMatrix matM;
+  SymbolicMatrix matS;
+  SymbolicMatrix vecY;
+  SymbolicMatrix vecU;
 
   if (numR > 0) {
     // TODO Test for multiple R
@@ -1361,7 +1520,7 @@ void BondGraph::computePortHamiltonian() {
     SymEngine::vec_basic resistance;
     Eigen::MatrixX<number> matD2;
     if (setVR.size() > 1) {
-      matD2 = SymbolixMatrix(setVR.size(), 2);
+      matD2 = SymbolicMatrix(setVR.size(), 2);
       matD2.fill(symZero);
       int ix = 0;
       for (auto &ie : setVR) {
@@ -1375,7 +1534,7 @@ void BondGraph::computePortHamiltonian() {
       matD2(0, 0) = matD2(0, 1);
       matD2(0, 1) = symZero;
     } else {
-      matD2 = SymbolixMatrix(setVR.size(), 1);
+      matD2 = SymbolicMatrix(setVR.size(), 1);
       for (auto &ie : setVR) {
         int numStates = ie->getNumStates();
         auto values = ie->values();
@@ -1401,16 +1560,16 @@ void BondGraph::computePortHamiltonian() {
       }
       vecuR_.push_back(expr);
     }
-    SymbolixMatrix vecfR(vecfR_.size(), 1);
+    SymbolicMatrix vecfR(vecfR_.size(), 1);
     for (int i = 0; i < vecfR_.size(); i++) {
       vecfR(i, 0) = SymEngine::parse(vecfR_[i]);
     }
-    SymbolixMatrix vecuR(vecuR_.size(), 1);
+    SymbolicMatrix vecuR(vecuR_.size(), 1);
     for (int i = 0; i < vecuR_.size(); i++) {
       vecuR(i, 0) = SymEngine::parse(vecuR_[i]);
     }
 
-    SymbolixMatrix matT(vecfR.size(), vecfR.size());
+    SymbolicMatrix matT(vecfR.size(), vecfR.size());
     matT.fill(symZero);
     for (int ci = 0; ci < vecfR.size(); ci++) {
       auto cvi = vecfR_[ci];
@@ -1423,7 +1582,7 @@ void BondGraph::computePortHamiltonian() {
     }
 
     auto vecfR1R2 = matT * vecfR;
-    auto matD2R1R2 = matD2 * matT;
+    SymbolicMatrix matD2R1R2 = matD2 * matT;
 
     SymEngine::DenseMatrix D2R1R2(matD2R1R2.rows(), matD2R1R2.cols());
     for (int i = 0; i < matD2R1R2.rows(); i++) {
@@ -1433,15 +1592,23 @@ void BondGraph::computePortHamiltonian() {
     }
     // Test if the constitutive relations of the resistive elements can be
     // written in input - output form Expensive test - ignored
+    // Except the part where matD2R1R2 is updated
+    if (posR1.size() > 0 && posR2.size() > 0) {
+      auto zeroM = SymbolicMatrix(posR1.size(), posR2.size());
+      zeroM.fill(symZero);
+      matD2R1R2.block(0, matD2R1R2.cols() - posR2.size() - 1, posR1.size(),
+                      posR2.size()) = zeroM;
+    }
+
     SymEngine::DenseMatrix matD2R1R2inv(matD2R1R2.rows(), matD2R1R2.cols());
     D2R1R2.inv(matD2R1R2inv);
 
-    SymbolixMatrix matR2;
+    SymbolicMatrix matR2;
     if (posR1.size() == 0) {
       matR2 = matD2R1R2;
     } else {
       // if posR2.size == 0, this is equal to inverse
-      matR2 = SymbolixMatrix(matD2R1R2.rows(), matD2R1R2.cols());
+      matR2 = SymbolicMatrix(matD2R1R2.rows(), matD2R1R2.cols());
       for (int i = 0; i < matD2R1R2.rows(); i++) {
         for (int j = 0; j < matD2R1R2.cols(); j++) {
           matR2(i, j) = matD2R1R2inv.get(i, j);
@@ -1456,7 +1623,13 @@ void BondGraph::computePortHamiltonian() {
           }
         }
         p1.inv(p1inv);
-        SymEngine::DenseMatrix p2(posR2.size(), posR2.size());
+        SymbolicMatrix p1inv_(posR1.size(), posR1.size());
+        for (int i = 0; i < posR1.size(); i++) {
+          for (int j = 0; j < posR1.size(); j++) {
+            p1inv_(i, j) = p1inv.get(i, j);
+          }
+        }
+        SymbolicMatrix p2(posR2.size(), posR2.size());
         int ix = 0;
         int ij = 0;
         for (int i = matD2R1R2.rows() - posR2.size() - 1; i < matD2R1R2.rows();
@@ -1464,20 +1637,27 @@ void BondGraph::computePortHamiltonian() {
           ij = 0;
           for (int j = matD2R1R2.cols() - posR2.size() - 1;
                j < matD2R1R2.rows(); j++) {
-            p2.set(ix, ij, matD2R1R2(i, j));
+            p2(ix, ij) = matD2R1R2(i, j);
             ij++;
           }
           ix++;
         }
-        // TODO create required matrix
         // ArrayFlatten[{{Inverse[matD2R1R2[[1 ;; Length[posR1], 1 ;;
         // Length[posR1]]]], 0}, {0, matD2R1R2[[-Length[posR2] ;; -1,
         // -Length[posR2] ;; -1]]}}]
+
+        matR2 = SymbolicMatrix(posR1.size() + posR2.size(),
+                               posR1.size() + posR2.size());
+        matR2.fill(0);
+        matR2.block(0, 0, posR1.size(), posR1.size()) = p1inv_;
+        matR2.block(posR1.size(), posR1.size(), posR2.size(), posR2.size()) =
+            p2;
       }
     }
-    SymbolixMatrix inumR(numR, numR);
+    SymbolicMatrix inumR(numR, numR);
     for (int i = 0; i < numR; i++)
       inumR(i, i) = symOne;
+
     auto matR2zRR = inumR + matR2 * zRR;
     SymEngine::DenseMatrix symMatR2zRR(matR2zRR.rows(), matR2zRR.cols());
     SymEngine::DenseMatrix symMatK(matR2zRR.rows(), matR2zRR.cols());
@@ -1487,10 +1667,10 @@ void BondGraph::computePortHamiltonian() {
       }
     }
     symMatR2zRR.inv(symMatK);
-    matK = SymbolixMatrix(matR2zRR.rows(), matR2zRR.cols());
+    matK = SymbolicMatrix(matR2zRR.rows(), matR2zRR.cols());
     for (int i = 0; i < matR2zRR.rows(); i++) {
       for (int j = 0; j < matR2zRR.cols(); j++) {
-        matK(i, j) = SymEngine::simplify(symMatR2zRR.get(i, j));
+        matK(i, j) = SymEngine::simplify(symMatK.get(i, j));
       }
     }
     matA = matK * matR2 - matR2 * matK.transpose();
@@ -1505,6 +1685,23 @@ void BondGraph::computePortHamiltonian() {
     matPT = matP.transpose();
     matM = zPP + SymEngine::parse("1/2") * zRP.transpose() * matA * zRP;
     matS = SymEngine::parse("1/2") * zRP.transpose() * matB * zRP;
+
+    std::cout << "zCC \n" << zCC << std::endl << std::endl;
+    std::cout << "zCR \n" << zCR << std::endl << std::endl;
+    std::cout << "zCP \n" << zCP << std::endl << std::endl;
+    std::cout << "zRP \n" << zRP << std::endl << std::endl;
+    std::cout << "zPP \n" << zPP << std::endl << std::endl;
+    std::cout << "matA \n" << matA << std::endl << std::endl;
+    std::cout << "matB \n" << matB << std::endl << std::endl;
+
+    std::cout << "matJ \n" << matJ << std::endl << std::endl;
+    std::cout << "matR \n" << matR << std::endl << std::endl;
+    std::cout << "matG \n" << matG << std::endl << std::endl;
+    std::cout << "matP \n" << matP << std::endl << std::endl;
+    std::cout << "matPT \n" << matPT << std::endl << std::endl;
+    std::cout << "matM \n" << matM << std::endl << std::endl;
+    std::cout << "matS \n" << matS << std::endl << std::endl;
+
     // DHDX = D(funH,{vecX})
   }
   // case 2 : there are resistors and sources but no storages present
@@ -1539,12 +1736,7 @@ void BondGraph::computePortHamiltonian() {
     for (int i = 0; i < numS; i++) {
       ind.push_back(diracEx[1].rows() - numS - 1 + i);
     }
-    std::cout << diracEx[1] << std::endl << std::endl;
-    std::cout << diracEx[3] << std::endl << std::endl;
-
     vecY = diracEx[1](ind, Eigen::placeholders::all);
     vecU = diracEx[3](ind, Eigen::placeholders::all);
-    std::cout << vecY << std::endl << std::endl;
-    std::cout << vecU << std::endl << std::endl;
   }
 }

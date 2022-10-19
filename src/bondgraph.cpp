@@ -34,7 +34,7 @@
 #include "Eigen/Dense"
 
 using number = SymEngine::Expression;
-using SymbolixMatrix = Eigen::MatrixX<number>;
+using SymbolicMatrix = Eigen::MatrixX<number>;
 
 namespace Eigen {
 // Dispatch to help with printing

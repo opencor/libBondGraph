@@ -154,7 +154,7 @@ if(WIN32)
 endif()
 
 if(MSVC)
-  # Required for PHS build
+  # Required for PHS build as the size of the obj file is large resulting in C1128
   add_compile_options("/bigobj")
 endif()
 

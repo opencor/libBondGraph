@@ -77,6 +77,7 @@ enum EXPORTED PassiveType {
   bConcentration,   //!< A Chemical concentration
   bChemostat,       //!< A Chemical chemostat
   bFlowstat,        //!< A Chemical fluxstat
+  bStoichiometry,   //!< A Chemical transformer element
   eZero,            //!< O-junction
   eOne,             //!< 1-junction
   ePortHamiltonian, //!< PortInterface hamiltonian type
