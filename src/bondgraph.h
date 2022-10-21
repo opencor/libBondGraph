@@ -289,7 +289,7 @@ public:
    * Graphs" Institute of Control Systems (IRS), Karlsruhe Institute of
    * Technology, 2019.
    */
-  void computePortHamiltonian();
+  nlohmann::json computePortHamiltonian();
 
   /**
    * @brief Get the Components object

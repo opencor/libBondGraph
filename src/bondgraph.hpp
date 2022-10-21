@@ -448,7 +448,7 @@ public:
   /**
    * @brief Compute the Port Hamiltonian of the bondgraph
    */
-  virtual void computePortHamiltonian() = 0;
+  virtual nlohmann::json computePortHamiltonian() = 0;
 
   /**
    * @brief Get the Components object
