@@ -2014,6 +2014,20 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     ds["ds"] = to_json(diracEx[2]);
     ds["rhs"] = to_json(diracEx[3]);
     result["ExplicitDS"] = ds;
+
+    // Port hamiltonian
+    SymbolicMatrix matJR = matJ - matR;
+    SymbolicMatrix matGP = matG - matP;
+    SymbolicMatrix matGt = matG.transpose();
+    SymbolicMatrix matGtPt = matGt - matPT;
+    SymbolicMatrix matMS = matM + matS;
+    nlohmann::json phs;
+    phs["matJR"] = to_json(matJR);
+    phs["matGP"] = to_json(matGP);
+    phs["matGt"] = to_json(matGt);
+    phs["matGtPt"] = to_json(matGtPt);
+    phs["matMS"] = to_json(matMS);
+    result["portHamiltonianMatrices"] = phs;
     result["success"] = true;
   } catch (BGException &ex) {
     result["error"] = ex.what();
