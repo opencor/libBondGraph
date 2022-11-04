@@ -103,6 +103,7 @@ nlohmann::json to_json(SymbolicMatrix &mat) {
 nlohmann::json BondGraph::computePortHamiltonian() {
   nlohmann::json result; // Compose results as we progress
   result["success"] = false;
+  std::vector<std::string> warnings;
   try {
     std::vector<RCPLIB::RCP<BGElement>> connectedComponents;
     std::map<std::string, RCPLIB::RCP<BGElement>> compIDMap;
@@ -1377,9 +1378,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       }
 
       if (rank != numNS)
-        throw BGException(
+        warnings.push_back(
             "The assumption rank(E_Sf | F_Se) = N(nSf + nSe) is not fulfiled. "
             "The bond Graph contains dependent sources.");
+      // throw BGException(
+      //     "The assumption rank(E_Sf | F_Se) = N(nSf + nSe) is not
+      //     fulfiled. " "The bond Graph contains dependent sources.");
 
       // Test Assumption rank(F_C | E_Sf | F_Se) = N(nC + nSf + nSe)
 
@@ -1403,10 +1407,14 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       }
 
       if (rank != (numNC + numNS))
-        throw BGException(
-            "The assumption rank(F_C | E_Sf | F_Se) = N(nC + nSf + nSe) is not \
-          fulfiled. The bond graph contains dependent storages or storages \
-          determined by sources.");
+        // throw BGException(
+        //     "The assumption rank(F_C | E_Sf | F_Se) = N(nC + nSf + nSe) is
+        //     not \
+        //   fulfiled. The bond graph contains dependent storages or storages \
+        //   determined by sources.");
+        warnings.push_back(
+            "The assumption rank(F_C | E_Sf | F_Se) = N(nC + nSf + nSe) is not "
+            "fulfiled. The bond Graph contains dependent sources.");
     }
 #endif
 
@@ -2032,6 +2040,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
   } catch (BGException &ex) {
     result["error"] = ex.what();
   }
+  if (warnings.size())
+    result["warnings"] = warnings;
   std::ofstream file("d:/Temp/LatexRenderer/phs.json");
   file << result;
   return result;
