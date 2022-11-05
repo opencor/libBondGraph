@@ -1026,10 +1026,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       E2(i, i) = symNegOne;
     }
 
-    auto DIC_Em = matEIC * vmatT.transpose();
-    auto DIC_Fm = matFIC * vmatT.transpose();
-    auto DIC_Ev = vmatT * vecEK;
-    auto DIC_Fv = vmatT * vecFK;
+    SymbolicMatrix vmt = vmatT.transpose();
+    // Slow block
+    SymbolicMatrix DIC_Em = matEIC * vmt;
+    SymbolicMatrix DIC_Fm = matFIC * vmt;
+    // Slow block
+    SymbolicMatrix DIC_Ev = vmatT * vecEK;
+    SymbolicMatrix DIC_Fv = vmatT * vecFK;
 
     std::map<std::string, int> setNumME;
     std::map<std::string, int> setNumMI;
@@ -1748,7 +1751,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       Eigen::MatrixX<number> matD2;
 
       if (numNR > 1) {
-        matD2 = SymbolicMatrix(numNR, 2);
+        matD2 = SymbolicMatrix(numNR, numNR);
         matD2.fill(symZero);
         int ix = 0;
 
@@ -1758,7 +1761,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string pname = std::get<1>(values[numStates])->name + "_" +
                               std::to_string(elementIndexs[ie->getId()]);
           resistance.push_back(SymEngine::parse(pname));
-          matD2(ix++, 1) = SymEngine::parse(pname);
+          matD2(ix, ix) = SymEngine::parse(pname);
+          ix++;
         }
         for (auto &ie : setVRe) {
           int numStates = ie->getNumStates();
@@ -1766,11 +1770,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string pname = std::get<1>(values[numStates])->name + "_" +
                               std::to_string(reactionIndexs[ie->getId()]);
           resistance.push_back(SymEngine::parse(pname));
-          matD2(ix++, 1) = SymEngine::parse(pname);
+          matD2(ix, ix) = SymEngine::parse(pname);
+          ix++;
         }
 
-        matD2(0, 0) = matD2(0, 1);
-        matD2(0, 1) = symZero;
+        // matD2(0, 0) = matD2(0, 1);
+        // matD2(0, 1) = symZero;
       } else {
         matD2 = SymbolicMatrix(numNR, 1);
         for (auto &ie : setVR) {
@@ -1799,12 +1804,30 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         vecfR_.push_back("f_" + setBEbnd[i]);
       }
       auto drur = diracEx[3](ind, Eigen::placeholders::all);
+      // Collect all the resistance element ids
+      std::vector<std::string> resistanceIds;
+      for (auto &r : setVR) {
+        resistanceIds.push_back(std::to_string(elementIndexs[r->getId()]));
+      }
+      for (auto &r : setVRe) {
+        resistanceIds.push_back(std::to_string(elementIndexs[r->getId()]));
+      }
       for (int i = 0; i < drur.rows(); i++) {
         std::string expr = drur(i, 0).get_basic()->__str__();
         if (expr.at(0) == '-') {
           expr = expr.substr(1, expr.size());
         }
-        vecuR_.push_back(expr);
+        // Replace all eR* in {uR1, uR2} with fR* to obtain {fR1, fR2}
+        std::string bndName = expr;
+        if (expr.at(0) == 'e') {
+          for (auto &r : resistanceIds) {
+            if (bndName.find(r) != std::string::npos) {
+              std::replace(bndName.begin(), bndName.end(), 'e', 'f');
+              break;
+            }
+          }
+        }
+        vecuR_.push_back(bndName);
       }
       SymbolicMatrix vecfR(vecfR_.size(), 1);
       for (int i = 0; i < vecfR_.size(); i++) {
@@ -1826,8 +1849,14 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           matT(mi, ci) = symOne;
         }
       }
+      std::cout << "mat T " << matT.rows() << " x " << matT.cols() << std::endl;
+      std::cout << "vecFR " << vecfR.rows() << " x " << vecfR.cols()
+                << std::endl;
+      std::cout << "matD2 " << matD2.rows() << " x " << matD2.cols()
+                << std::endl;
 
       auto vecfR1R2 = matT * vecfR;
+
       SymbolicMatrix matD2R1R2 = matD2 * matT;
 
       SymEngine::DenseMatrix D2R1R2(matD2R1R2.rows(), matD2R1R2.cols());
