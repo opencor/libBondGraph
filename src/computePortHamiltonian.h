@@ -2,6 +2,9 @@
 #define CHECK_DEPENDEND_SOURCES
 #include <fstream>
 
+#include <iostream>
+#include <time.h>
+
 static int getMatrixRank(SymbolicMatrix &mat) {
   Eigen::MatrixX<float> R(mat.rows(), mat.cols());
   R.fill(0.0);
@@ -885,11 +888,11 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       std::cout << "Ei \n" << Fi << std::endl;
       std::cout << "ei \n" << Ei << std::endl;
 #endif
-
-      setDirac[eid][0] = Fi * matT.transpose();
+      SymbolicMatrix matTt = matT.transpose();
+      setDirac[eid][0] = Fi * matTt;
       setDirac[eid][1] = (matT * fi);
 
-      setDirac[eid][2] = Ei * matT.transpose();
+      setDirac[eid][2] = Ei * matTt;
       setDirac[eid][3] = matT * ei;
 
 #ifdef DEBUG_PHS
@@ -1005,7 +1008,6 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     }
     auto vmatT = SymbolicMatrix(sBIsize * 2, sBIsize * 2);
     vmatT.fill(symZero);
-
     for (int ci = 0; ci < sBIsize * 2; ci++) {
       vmatT(sindex[ci], ci) = symOne;
     }
@@ -1027,10 +1029,26 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     }
 
     SymbolicMatrix vmt = vmatT.transpose();
+
     // Slow block
-    SymbolicMatrix DIC_Em = matEIC * vmt;
-    SymbolicMatrix DIC_Fm = matFIC * vmt;
+    // {
+    //   time_t begin, end;
+    //   time(&begin);
+    //   SymbolicMatrix DIC_Em1 = matEIC * vmt;
+    //   SymbolicMatrix DIC_Fm1 = matFIC * vmt;
+    //   time(&end);
+    //   time_t elapsed = end - begin;
+    //   std::cout << elapsed << std::endl;
+    // }
     // Slow block
+    // Using copy
+    SymbolicMatrix DIC_Em(2 * numMI, 2 * numMI);
+    SymbolicMatrix DIC_Fm(2 * numMI, 2 * numMI);
+    for (int ci = 0; ci < sBIsize * 2; ci++) {
+      DIC_Em.col(sindex[ci]) = matEIC.col(ci);
+      DIC_Fm.col(sindex[ci]) = matFIC.col(ci);
+    }
+
     SymbolicMatrix DIC_Ev = vmatT * vecEK;
     SymbolicMatrix DIC_Fv = vmatT * vecFK;
 
@@ -1849,11 +1867,6 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           matT(mi, ci) = symOne;
         }
       }
-      std::cout << "mat T " << matT.rows() << " x " << matT.cols() << std::endl;
-      std::cout << "vecFR " << vecfR.rows() << " x " << vecfR.cols()
-                << std::endl;
-      std::cout << "matD2 " << matD2.rows() << " x " << matD2.cols()
-                << std::endl;
 
       auto vecfR1R2 = matT * vecfR;
 
