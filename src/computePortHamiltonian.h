@@ -422,6 +422,11 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         }
       }
     }
+    // Algorithm requires 1 or more internal bonds
+    if (setBI.size() == 0) {
+      throw BGException(
+          "One or more internal bonds are required for the method to work!");
+    }
 
     // External Bonds
     std::vector<std::tuple<RCPLIB::RCP<BGElement>, RCPLIB::RCP<BGElement>>>
@@ -981,7 +986,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     // Get the permutation matrix for rearranging rows to follow the order
     // in which the flows appear in setBI
 
-#ifdef DEBUG_PHS
+#ifndef DEBUG_PHS
+    std::cout << "vecFK and vecFIC " << std::endl;
     std::cout << vecFK << std::endl << std::endl;
     std::cout << vecFIC << std::endl << std::endl;
 #endif
@@ -1110,21 +1116,25 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       for (int ci = setNumME[c]; ci < sdf.rows(); ci++) {
         ind.push_back(ci);
       }
-      setDirac[c][5] = sdf(ind, Eigen::placeholders::all);
-      setDirac[c][7] = sde(ind, Eigen::placeholders::all);
-      matMTi[c] = matFICi[c] * setDirac[c][7] + matEICi[c] * setDirac[c][5];
+      if (ind.size() > 0) {
+        setDirac[c][5] = sdf(ind, Eigen::placeholders::all);
+        setDirac[c][7] = sde(ind, Eigen::placeholders::all);
+        matMTi[c] = matFICi[c] * setDirac[c][7] + matEICi[c] * setDirac[c][5];
 
 #ifdef DEBUG_PHS
-      std::cout << compIDMap[c]->getName() << "F \n" << sdf << std::endl;
-      std::cout << compIDMap[c]->getName() << " F first \n"
-                << setDirac[c][4] << std::endl;
-      std::cout << compIDMap[c]->getName() << " F reminder\n"
-                << setDirac[c][5] << std::endl;
-      std::cout << compIDMap[c]->getName() << "MatMTi\n"
-                << matMTi[c] << std::endl;
+        std::cout << compIDMap[c]->getName() << "F \n" << sdf << std::endl;
+        std::cout << compIDMap[c]->getName() << " F first \n"
+                  << setDirac[c][4] << std::endl;
+        std::cout << compIDMap[c]->getName() << " F reminder\n"
+                  << setDirac[c][5] << std::endl;
+        std::cout << compIDMap[c]->getName() << "MatMTi\n"
+                  << matMTi[c] << std::endl;
 #endif
 
-      numCols += matMTi[c].cols();
+        numCols += matMTi[c].cols();
+      } else {
+        matMTi[c] = SymbolicMatrix(0, 0);
+      }
     }
     SymbolicMatrix matMT(2 * numMI, numCols);
     matMT.fill(symZero);
@@ -1343,6 +1353,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
               << "Dirac 4\n"
               << dr4 << std::endl;
 #endif
+
     // Store implicit DS
     nlohmann::json ids;
     ids["F"] = to_json(dirac[1]);
@@ -2081,6 +2092,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     result["success"] = true;
   } catch (BGException &ex) {
     result["error"] = ex.what();
+  } catch (std::runtime_error &e) {
+    result["error"] = e.what();
   }
   if (warnings.size())
     result["warnings"] = warnings;

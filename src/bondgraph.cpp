@@ -31,7 +31,15 @@
 #include <corecrt_math_defines.h>
 #endif
 // For computing porthamiltonian
+// Throw assertion failures as exceptions
+#define eigen_assert(X)                                                        \
+  do {                                                                         \
+    if (!(X))                                                                  \
+      throw BG::BGException(#X);                                               \
+  } while (false);
+// make sure Eigen is not included before your define:
 #include "Eigen/Dense"
+#include <Eigen/Core>
 
 using number = SymEngine::Expression;
 using SymbolicMatrix = Eigen::MatrixX<number>;
