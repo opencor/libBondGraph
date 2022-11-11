@@ -240,6 +240,36 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
   return ioBondGraph;
 }
 
+RCPLIB::RCP<BondGraphInterface> simpleRLC() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create the junctions
+  auto lJ1_1 = createOneJunction();
+  ioBondGraph->addComponent(lJ1_1);
+
+  // Create Source
+  auto lSe = createConstantVoltageSource();
+  ioBondGraph->addComponent(lSe);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ1_1, lR);
+  ioBondGraph->connect(lJ1_1, lC1);
+  ioBondGraph->connect(lJ1_1, lSe);
+
+  std::cout << " Simple RC+V " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
 RCPLIB::RCP<BondGraphInterface> rlc() {
   auto ioBondGraph = createBondGraph();
 
@@ -367,9 +397,10 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 
 int main(int argc, char *argv[]) {
   // rlc();
+  simpleRLC();
   // reaction();
   // eReaction();
-  loadProject(
-      "D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  // loadProject("D:/GithubRepositories/BGUITest/Examples/RC/RC circuit.json");
   return 0;
 }

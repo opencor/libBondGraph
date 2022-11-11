@@ -113,8 +113,9 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     const SymEngine::Expression symNegOne = SymEngine::Expression("-1");
     const SymEngine::Expression symOne = SymEngine::Expression("1");
     const SymEngine::Expression symZero = SymEngine::Expression("0");
+    std::vector<RCPLIB::RCP<BondInterface>> mBonds_(mBonds);
 
-    for (auto &bd : mBonds) {
+    for (auto &bd : mBonds_) {
       auto from = bd->getFromPort()->getComponent();
       auto to = bd->getToPort()->getComponent();
       compIDMap[from->getId()] = from;
@@ -222,6 +223,87 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     setVE.insert(std::end(setVE), std::begin(setVSf), std::end(setVSf));
     setVE.insert(std::end(setVE), std::begin(setVSe), std::end(setVSe));
 
+    result["DICValid"] = true;
+    // Algorithm requires 1 or more internal bonds
+    if (setVI.size() < 2) {
+      result["DICValid"] = false;
+      // Find a storage element, if not available a dissipative element, connect
+      // it to a 1 junction and connect the 1 junction to junction which the
+      // storage element was previously connected This will require the redoing
+      // of adjacency matrix
+      auto dummyOneJunc = createOneJunction();
+      compIDMap[dummyOneJunc->getId()] = dummyOneJunc;
+      setV1.push_back(dummyOneJunc);
+      RCPLIB::RCP<BGElement> &selectedElement = setVE[0];
+      int bond2delete = -1;
+      std::vector<RCPLIB::RCP<BondInterface>> bonds2add;
+      // Find the associated bond
+      for (int i = 0; i < mBonds_.size(); i++) {
+        auto &bd = mBonds_[i];
+        auto from = bd->getFromPort()->getComponent();
+        auto to = bd->getToPort()->getComponent();
+        bool fnd = false;
+        if (from->getId() == selectedElement->getId()) {
+          const RCPLIB::RCP<PortInterface> &lm = bd->getFromPort();
+          from->disconnect(lm);
+          const RCPLIB::RCP<PortInterface> &ml = bd->getToPort();
+          to->disconnect(ml);
+          auto &fPorts = from->getPorts()[0];
+          auto &p1 = createPort(true);
+          p1->connect(dummyOneJunc.create_weak());
+          auto &p2 = createPort(false);
+          p2->connect(dummyOneJunc.create_weak());
+          auto &p3 = createPort(false);
+          p3->connect(to.create_weak());
+
+          RCPLIB::RCP<BondInterface> &lBond = createBond(-1);
+          lBond->connect(fPorts, p1);
+          RCPLIB::RCP<BondInterface> &rBond = createBond(-1);
+          rBond->connect(p2, p3);
+          bonds2add.push_back(lBond);
+          bonds2add.push_back(rBond);
+          fnd = true;
+        } else if (to->getId() == selectedElement->getId()) {
+          const RCPLIB::RCP<PortInterface> &lm = bd->getFromPort();
+          from->disconnect(lm);
+          const RCPLIB::RCP<PortInterface> &ml = bd->getToPort();
+          to->disconnect(ml);
+          auto &tPorts = to->getPorts()[0];
+          auto &p1 = createPort(true);
+          p1->connect(dummyOneJunc.create_weak());
+          auto &p2 = createPort(false);
+          p2->connect(dummyOneJunc.create_weak());
+          auto &p3 = createPort(false);
+          p3->connect(from.create_weak());
+
+          RCPLIB::RCP<BondInterface> &lBond = createBond(-1);
+          lBond->connect(tPorts, p1);
+          RCPLIB::RCP<BondInterface> &rBond = createBond(-1);
+          rBond->connect(p2, p3);
+          bonds2add.push_back(lBond);
+          bonds2add.push_back(rBond);
+          fnd = true;
+        }
+        if (fnd) {
+          bond2delete = i;
+          break;
+        }
+      }
+      if (bonds2add.size() > 0) {
+        mBonds_.erase(mBonds_.begin() + bond2delete);
+        mBonds_.push_back(bonds2add[0]);
+        mBonds_.push_back(bonds2add[1]);
+      }
+      // Redo setVI
+      setVI.clear();
+      setVI.insert(std::end(setVI), std::begin(setV0), std::end(setV0));
+      setVI.insert(std::end(setVI), std::begin(setV1), std::end(setV1));
+      setVI.insert(std::end(setVI), std::begin(setVRe), std::end(setVRe));
+      setVI.insert(std::end(setVI), std::begin(setVStoic), std::end(setVStoic));
+      setVI.insert(std::end(setVI), std::begin(setVTF), std::end(setVTF));
+      setVI.insert(std::end(setVI), std::begin(setVGY), std::end(setVGY));
+    }
+
     //[setVI, setVE]; // All elements
     std::vector<RCPLIB::RCP<BGElement>> setV;
     setV.insert(std::end(setV), std::begin(setVI), std::end(setVI));
@@ -245,6 +327,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     std::map<std::string, unsigned int> elementIndexs;
     std::map<std::string, unsigned int> reactionIndexs;
     std::map<std::string, unsigned int> bondIndexs;
+
     unsigned int ix = 0;
     // Create element ids in the order of element types [0,1,TF,GY,C,R,S]
     auto psets = {setV0, setV1, setVRe, setVTF, setVGY, setVC, setVConc, setVR};
@@ -362,7 +445,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     Eigen::MatrixXi adjacency = Eigen::MatrixXi(numN, numN);
     adjacency.fill(0);
 
-    for (auto &bd : mBonds) {
+    for (auto &bd : mBonds_) {
       auto from = bd->getFromPort()->getComponent();
       auto to = bd->getToPort()->getComponent();
       auto fidx = elementIndexs[from->getId()];
@@ -421,11 +504,6 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           setBI.push_back(std::make_tuple(setVI.at(i), setVI.at(j)));
         }
       }
-    }
-    // Algorithm requires 1 or more internal bonds
-    if (setBI.size() == 0) {
-      throw BGException(
-          "One or more internal bonds are required for the method to work!");
     }
 
     // External Bonds
@@ -986,7 +1064,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     // Get the permutation matrix for rearranging rows to follow the order
     // in which the flows appear in setBI
 
-#ifndef DEBUG_PHS
+#ifdef DEBUG_PHS
     std::cout << "vecFK and vecFIC " << std::endl;
     std::cout << vecFK << std::endl << std::endl;
     std::cout << vecFIC << std::endl << std::endl;
@@ -2097,7 +2175,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
   }
   if (warnings.size())
     result["warnings"] = warnings;
-  std::ofstream file("d:/Temp/LatexRenderer/phs.json");
-  file << result;
+  // std::ofstream file("d:/Temp/LatexRenderer/phs.json");
+  // file << result;
   return result;
 }
