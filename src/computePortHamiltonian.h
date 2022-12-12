@@ -249,16 +249,16 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           const RCPLIB::RCP<PortInterface> &ml = bd->getToPort();
           to->disconnect(ml);
           auto &fPorts = from->getPorts()[0];
-          auto &p1 = createPort(true);
+          auto p1 = createPort(true);
           p1->connect(dummyOneJunc.create_weak());
-          auto &p2 = createPort(false);
+          auto p2 = createPort(false);
           p2->connect(dummyOneJunc.create_weak());
-          auto &p3 = createPort(false);
+          auto p3 = createPort(false);
           p3->connect(to.create_weak());
 
-          RCPLIB::RCP<BondInterface> &lBond = createBond(-1);
+          RCPLIB::RCP<BondInterface> lBond = createBond(-1);
           lBond->connect(fPorts, p1);
-          RCPLIB::RCP<BondInterface> &rBond = createBond(-1);
+          RCPLIB::RCP<BondInterface> rBond = createBond(-1);
           rBond->connect(p2, p3);
           bonds2add.push_back(lBond);
           bonds2add.push_back(rBond);
@@ -269,16 +269,16 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           const RCPLIB::RCP<PortInterface> &ml = bd->getToPort();
           to->disconnect(ml);
           auto &tPorts = to->getPorts()[0];
-          auto &p1 = createPort(true);
+          auto p1 = createPort(true);
           p1->connect(dummyOneJunc.create_weak());
-          auto &p2 = createPort(false);
+          auto p2 = createPort(false);
           p2->connect(dummyOneJunc.create_weak());
-          auto &p3 = createPort(false);
+          auto p3 = createPort(false);
           p3->connect(from.create_weak());
 
-          RCPLIB::RCP<BondInterface> &lBond = createBond(-1);
+          RCPLIB::RCP<BondInterface> lBond = createBond(-1);
           lBond->connect(tPorts, p1);
-          RCPLIB::RCP<BondInterface> &rBond = createBond(-1);
+          RCPLIB::RCP<BondInterface> rBond = createBond(-1);
           rBond->connect(p2, p3);
           bonds2add.push_back(lBond);
           bonds2add.push_back(rBond);
@@ -1100,10 +1100,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymbolicMatrix matEIC(2 * numMI, 2 * numMI);
     matFIC.fill(symZero);
     matEIC.fill(symZero);
-    auto &I1 = matFIC.block(0, 0, numMI, numMI);
-    auto &I2 = matFIC.block(0, numMI, numMI, numMI);
-    auto &E1 = matEIC.block(numMI, 0, numMI, numMI);
-    auto &E2 = matEIC.block(numMI, numMI, numMI, numMI);
+    auto I1 = matFIC.block(0, 0, numMI, numMI);
+    auto I2 = matFIC.block(0, numMI, numMI, numMI);
+    auto E1 = matEIC.block(numMI, 0, numMI, numMI);
+    auto E2 = matEIC.block(numMI, numMI, numMI, numMI);
 
     for (int i = 0; i < numMI; i++) {
       I1(i, i) = symOne;

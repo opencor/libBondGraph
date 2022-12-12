@@ -289,7 +289,6 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       derivatives[variable.substr(4)] = variable;
     }
   }
-
   cellML.str("");
   cellML.clear();
   std::ostringstream mapParameterFile;
@@ -318,22 +317,27 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   for (auto var : orderedDim) {
     std::string dim = std::get<0>(var.second);
     std::string unitName = dim;
-    try {
-      if (dim != "") {
+
+      if (dim != "") {       
+      
         unitName = unitMap.getUnitName(dim);
-        definedNames[var.first] = unitName;
-        mapUnits[unitName] = true;
-        if (cellMLDefinitions.find(dim) == cellMLDefinitions.end()) {
-          auto res = unitMap.getCellMLDef(unitName);
-          units::precise_unit unitDef = std::get<2>(res);
-          existingUnits[unitName] = unitDef;
-          cellMLDefinitions[dim] = res;
-        } else {
-          auto res = cellMLDefinitions[dim];
-          units::precise_unit unitDef = std::get<2>(res);
-          existingUnits[unitName] = unitDef;
+        if(unitName!="UNIT_NAME_NOT_FOUND"){
+          definedNames[var.first] = unitName;
+          mapUnits[unitName] = true;
+          if (cellMLDefinitions.find(dim) == cellMLDefinitions.end()) {
+            auto res = unitMap.getCellMLDef(unitName);
+            units::precise_unit unitDef = std::get<2>(res);
+            existingUnits[unitName] = unitDef;
+            cellMLDefinitions[dim] = res;
+          } else {
+            auto res = cellMLDefinitions[dim];
+            units::precise_unit unitDef = std::get<2>(res);
+            existingUnits[unitName] = unitDef;
+          }
+          dimUnitMap[dim] = unitName;
+        }else{
+          newDims[var.first] = var.second;
         }
-        dimUnitMap[dim] = unitName;
       } else {
         unitName = "dimensionless";
         definedNames[var.first] = unitName;
@@ -342,12 +346,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
         existingUnits[unitName] = units::precise::one;
         dimUnitMap[dim] = unitName;
       }
-
-    } catch (std::exception &x) {
-      newDims[var.first] = var.second;
-    }
   }
-
   for (auto var : newDims) {
     std::string dim = std::get<0>(var.second);
     std::string unitName = dim;
@@ -358,7 +357,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     } else {
       res = cellMLDefinitions[dim];
     }
-    // auto res = unitMap.getCellMLDef(unitName);
+    // auto res = unitMap->getCellMLDef(unitName);
     units::precise_unit unitDef = std::get<2>(res);
     bool found = false;
     // Check if unit definition already exists
@@ -391,6 +390,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       logWarn("Failed to parse standard units definition file!!");
     }
   }
+
   connect.str("");
   connect.clear();
   connect << "<import xlink:href = \"Units.cellml\">" << std::endl;
@@ -447,7 +447,6 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   }
   connect.str("");
   connect.clear();
-
   // Define all the parameters and map them to cellML
   connect << "<connection>\n<map_components component_1 = \"parameters\" "
              "component_2 = \""

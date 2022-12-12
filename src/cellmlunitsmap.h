@@ -131,7 +131,9 @@ public:
         if (existingNames.find(unit) != existingNames.end()) {
             return existingNames[unit];
         }
-        throw BGException("Name for unit " + unit + " not found");
+        //WASM doesnt handle exceptions well, so returing a unique string
+        return "UNIT_NAME_NOT_FOUND";
+        //throw BGException("Name for unit " + unit + " not found");
     }
 
     std::tuple<std::string,std::string,units::precise_unit> getCellMLDef(const std::string& unit){

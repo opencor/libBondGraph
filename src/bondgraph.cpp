@@ -25,6 +25,7 @@
 
 #include "simplifyexplog.h"
 
+
 #if defined(_MSC_VER)
 // Math defines like M_PI_2 are used by eigen, without this MSVC compilation
 // fails
@@ -70,6 +71,8 @@ private:
 };
 
 } // namespace Eigen
+
+
 
 namespace NGraph {
 // Combine graphs

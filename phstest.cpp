@@ -236,7 +236,8 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
     }
   }
   std::cout << file << std::endl;
-  ioBondGraph->computePortHamiltonian();
+  nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  std::cout<< res.dump() << std::endl;
   return ioBondGraph;
 }
 
@@ -265,8 +266,8 @@ RCPLIB::RCP<BondGraphInterface> simpleRLC() {
   ioBondGraph->connect(lJ1_1, lSe);
 
   std::cout << " Simple RC+V " << std::endl;
-  ioBondGraph->computePortHamiltonian();
-
+  nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  std::cout<< res.dump() << std::endl;
   return ioBondGraph;
 }
 
@@ -311,8 +312,8 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->connect(lSf, lJ0_1);
 
   std::cout << " PHS " << std::endl;
-  ioBondGraph->computePortHamiltonian();
-
+  nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  std::cout<< res.dump() << std::endl;
   return ioBondGraph;
 }
 
@@ -396,11 +397,11 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 }
 
 int main(int argc, char *argv[]) {
-  // rlc();
+  //rlc();
   simpleRLC();
   // reaction();
   // eReaction();
   // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  // loadProject("D:/GithubRepositories/BGUITest/Examples/RC/RC circuit.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RC circuit.json");
   return 0;
 }
