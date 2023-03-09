@@ -398,10 +398,10 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 
 int main(int argc, char *argv[]) {
   //rlc();
-  simpleRLC();
+  //simpleRLC();
   // reaction();
   // eReaction();
   // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RC circuit.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   return 0;
 }

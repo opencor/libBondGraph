@@ -35,13 +35,7 @@ using namespace BG;
 EM_JS(void, printInput, (const char *str), { console.log(UTF8ToString(str)); });
 
 
-std::string generateCellMLForBondgraph(std::string bgJson) {
-
-  nlohmann::json result;
-  result["success"] = true;
-  result["input"] = bgJson;
-
-  try {
+static RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson){
     nlohmann::json jf = nlohmann::json::parse(bgJson);
     nlohmann::json methods = getSupportedPhysicalDomainsAndFactoryMethods();
     std::map<std::string, RCPLIB::RCP<BG::BGElement>> elements;
@@ -265,6 +259,23 @@ std::string generateCellMLForBondgraph(std::string bgJson) {
         }
       }
     }
+  return ioBondGraph;
+}
+
+std::string getSupportedPhysicalDomainsAndFactories(){
+  nlohmann::json methods = getSupportedPhysicalDomainsAndFactoryMethods();
+  std::string result = methods.dump();
+  return result;
+}
+
+std::string generateCellMLForBondgraph(std::string bgJson) {
+  nlohmann::json result;
+  result["success"] = true;
+  result["input"] = bgJson;
+
+  try{
+    auto ioBondGraph = generateBondGraph(bgJson);
+    printInput("Successfully generated BondGraph!");
     auto eqs = ioBondGraph->computeStateEquation();
     printInput("Successfully computed state equation!");
     auto files = getCellML("Reaction", ioBondGraph, eqs);
@@ -284,6 +295,36 @@ std::string generateCellMLForBondgraph(std::string bgJson) {
   return output;
 }
 
-EMSCRIPTEN_BINDINGS(module) {
+std::string generatePortHamiltonian(std::string bgJson){
+  nlohmann::json result;
+  result["success"] = true;
+  result["input"] = bgJson;
+
+  try{
+    auto ioBondGraph = generateBondGraph(bgJson);
+    printInput("Successfully generated BondGraph!");
+    auto phs = ioBondGraph->computePortHamiltonian();
+    printInput("Successfully computed portHamiltonian!");
+    result["phs"] = phs;
+  } catch (const std::exception &exc) {
+    result["success"] = false;
+    result["error"] = exc.what();
+    printInput(exc.what());
+  } catch (nlohmann::json::parse_error &ex) {
+    result["success"] = false;
+    result["error"] = ex.what();
+    printInput(ex.what());
+  }
+  std::string output = result.dump();
+  return output;
+}
+
+EMSCRIPTEN_BINDINGS(libbondgraph) {
+  function("getSupportedPhysicalDomainsAndFactoryMethods",&getSupportedPhysicalDomainsAndFactories);
   function("generateCellMLForBondgraph", &generateCellMLForBondgraph);
+  function("generatePortHamiltonian",&generatePortHamiltonian);
+  function("checkUnits",&BG::checkUnits);
+  //To create Bondgraphs - send the scene and create it in the library
+  //and send the json
+
 }

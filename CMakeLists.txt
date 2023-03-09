@@ -300,6 +300,7 @@ else(NOT EMSCRIPTEN)
                )
   
   set(CMAKE_EXECUTABLE_SUFFIX ".js")
+  #set_target_properties(${PROJECT_NAME}_WASM PROPERTIES LINK_FLAGS "--no-entry -fsanitize=undefined -sWASM -sALLOW_MEMORY_GROWTH -sNO_DISABLE_EXCEPTION_CATCHING -sMODULARIZE --bind -s EXPORT_NAME='createLibBondGraph'")
   set_target_properties(${PROJECT_NAME}_WASM PROPERTIES LINK_FLAGS "--no-entry -fsanitize=undefined -sWASM -sALLOW_MEMORY_GROWTH -sNO_DISABLE_EXCEPTION_CATCHING --bind")
   target_include_directories(${PROJECT_NAME}_WASM
     PRIVATE

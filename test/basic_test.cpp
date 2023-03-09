@@ -137,10 +137,59 @@ RCPLIB::RCP<BondGraphInterface> phstest() {
   return ioBondGraph;
 }
 
+
+RCPLIB::RCP<BondGraphInterface> phstestRLC() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
+  auto lL2 = createInductor();
+  ioBondGraph->addComponent(lL2);
+
+  // Create the Flow source
+  auto lSfin = createConstantFlowSource();
+  ioBondGraph->addComponent(lSfin);
+
+  auto lSfout = createConstantFlowSource();
+  ioBondGraph->addComponent(lSfout);  
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create the junctions
+  auto lJ0_1 = createZeroJunction();
+  auto lJ0_3 = createZeroJunction();  
+  auto lJ1_2 = createOneJunction();
+  ioBondGraph->addComponent(lJ0_1);
+  ioBondGraph->addComponent(lJ0_3);
+  ioBondGraph->addComponent(lJ1_2);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ0_1, lC1);
+  ioBondGraph->connect(lJ0_3, lL2);
+  ioBondGraph->connect(lJ1_2, lR);
+
+  ioBondGraph->connect(lSfin,lJ0_1);
+  ioBondGraph->connect(lJ0_3, lSfout);
+
+  ioBondGraph->connect(lJ0_1,lJ1_2);
+  ioBondGraph->connect(lJ1_2,lJ0_3);
+
+
+  std::cout << " PHS " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
+
 TEST(BondGraphSetup, Electrical) {
   newWorkSpace();
   // Expect two strings not to be equal.
-  auto ioBondGraph = phstest();
+  auto ioBondGraph = phstestRLC();
 }
 /*
 TEST(BondGraphSetup, Electrical) {
