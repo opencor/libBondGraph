@@ -401,7 +401,8 @@ int main(int argc, char *argv[]) {
   //simpleRLC();
   // reaction();
   // eReaction();
-  // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
+  //loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   return 0;
 }

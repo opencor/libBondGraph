@@ -983,7 +983,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   // Dof solutions
   for (auto &k : eqConstraints) {
     results.dof_constraints[k.first->subs(nameMapSubs)] =
-        SymEngine::simplifyExpLog(k.second)->subs(nameMapSubs);
+        SymEngine::(k.second)->subs(nameMapSubs);
   }
 
   // results.constraints = minConstraints;

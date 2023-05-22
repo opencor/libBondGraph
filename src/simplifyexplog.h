@@ -204,6 +204,44 @@ public:
     };
 };
 
+
+class TermVisitor: public BaseVisitor<TermVisitor,TransformVisitor>
+{
+public:
+    vec_basic lhs;
+    vec_basic rhs;
+    const RCP<Symbol>* target;
+    TermVisitor(const RCP<Symbol> *_target)
+        : BaseVisitor<TermVisitor, TransformVisitor>()
+        , target(_target)
+    {
+
+    }
+     using TransformVisitor::bvisit;
+
+    void bvisit(const Mul &x)
+    {
+        auto fv = free_symbols(x);
+        auto search = fv.find(*target);
+        if (search != fv.end())
+            lhs.push_back(x.rcp_from_this());
+        else
+            rhs.push_back(x.rcp_from_this());
+        
+        result_ = x.rcp_from_this();
+    }
+
+    vec_basic& getLhs(){
+        return lhs;
+    }
+
+    vec_basic& getRhs(){
+        return rhs;
+    }    
+};
+
+
+
 RCP<const Basic> simplifyExpLog(const RCP<const Basic> &x,
                                 const Assumptions *assumptions)
 {
