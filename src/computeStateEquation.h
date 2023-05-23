@@ -91,7 +91,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    std::string eName = mc->getName();
+    //std::string eName = mc->getName();
+    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eS) {
       auto values = mc->values();
       ss.str("");
@@ -239,7 +240,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    std::string eName = mc->getName();
+    //std::string eName = mc->getName();
+    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eR) {
       auto ports = mc->getPorts();
       // Handle reactions
@@ -280,7 +282,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    std::string eName = mc->getName();
+    //std::string eName = mc->getName();
+    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eU) {
       ess.str("");
       ess.clear();
@@ -324,7 +327,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    std::string eName = mc->getName();
+    //std::string eName = mc->getName();
+    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eJ) {
       auto ports = mc->getPorts();
       for (int i = 0; i < ports.size(); i++) {
@@ -429,7 +433,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       rows++;
     }
 
-    std::cout << mc->getName() << "\t" << rccc << "\t" << rows - 1 << std::endl;
+    std::cout << mc->getVariableName() << "\t" << rccc << "\t" << rows - 1 << std::endl;
     std::vector<std::string> &lceq = mc->getConstitutiveEquations();
     int cei = 0;
     for (auto &lc : lceq) {
@@ -983,7 +987,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   // Dof solutions
   for (auto &k : eqConstraints) {
     results.dof_constraints[k.first->subs(nameMapSubs)] =
-        SymEngine::(k.second)->subs(nameMapSubs);
+        SymEngine::simplifyExpLog(k.second)->subs(nameMapSubs);
   }
 
   // results.constraints = minConstraints;

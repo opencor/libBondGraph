@@ -534,19 +534,20 @@ void BondGraph::removeBond(const RCPLIB::RCP<BondInterface> &inBond) {
   }
   */
 
-  std::vector<RCPLIB::RCP<BondInterface>>::iterator lBondIter = mBonds.begin();
-  for (lBondIter; lBondIter != mBonds.end(); lBondIter++) {
+  //std::vector<RCPLIB::RCP<BondInterface>>::iterator lBondIter = mBonds.begin();
+  for (auto lBondIter = mBonds.begin(); lBondIter != mBonds.end(); lBondIter++) {
     const RCPLIB::RCP<Bond> bi = RCPLIB::rcp_dynamic_cast<Bond>(*lBondIter);
     const RCPLIB::RCP<Bond> ib = RCPLIB::rcp_dynamic_cast<Bond>(inBond);
     if (*bi == *ib) {
       graph->remove_edge((inBond)->getFromPort()->getComponent()->getId(),
                          (inBond)->getToPort()->getComponent()->getId());
+      mBonds.erase(lBondIter);                 
       break;
     }
   }
-  if (lBondIter != mBonds.end()) {
-    mBonds.erase(lBondIter);
-  }
+  // if (lBondIter != mBonds.end()) {
+  //   mBonds.erase(lBondIter);
+  // }
 }
 
 void BondGraph::removeComponent(

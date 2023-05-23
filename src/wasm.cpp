@@ -63,7 +63,7 @@ static RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson){
         auto edef = def["annotation"]["ElementDefinition"];
         auto sp = def["annotation"]["statesAndParameters"];
         std::string displayName = def["displayname"];
-        std::replace(displayName.begin(), displayName.end(), ':', 'c');
+        //std::replace(displayName.begin(), displayName.end(), ':', 'c');
 
         auto cellmlName = displayName;
         auto dName = def["mid"]; // Connections store mid's
@@ -278,9 +278,20 @@ std::string generateCellMLForBondgraph(std::string bgJson) {
     printInput("Successfully generated BondGraph!");
     auto eqs = ioBondGraph->computeStateEquation();
     printInput("Successfully computed state equation!");
-    auto files = getCellML("Reaction", ioBondGraph, eqs);
-    result["cellml"] = files;
-    printInput("Successfully generated cellml!");
+    //Get project name
+    nlohmann::json jf = nlohmann::json::parse(bgJson);
+    if(jf["Provenance"].contains("projectname")){
+      std::string projectName = jf["Provenance"]["projectname"];
+      auto files = getCellML(projectName, ioBondGraph, eqs);
+      result["cellml"] = files;
+      printInput("Successfully generated cellml!");
+    }else{
+      auto files = getCellML("WASM", ioBondGraph, eqs);
+      result["cellml"] = files;
+      printInput("Successfully generated cellml with temporary projectname `WASM`!");
+    }
+    
+    
   } catch (const std::exception &exc) {
     result["success"] = false;
     result["error"] = exc.what();
@@ -326,5 +337,4 @@ EMSCRIPTEN_BINDINGS(libbondgraph) {
   function("checkUnits",&BG::checkUnits);
   //To create Bondgraphs - send the scene and create it in the library
   //and send the json
-
 }

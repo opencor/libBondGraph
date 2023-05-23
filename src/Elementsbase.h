@@ -70,6 +70,8 @@ public:
      const std::string &getName() const;
     //! Set element name
      void setName(const std::string &name);
+    //! Get variable name for this element
+    std::string getVariableName();
     //! Set if instance is a proxy
     void setProxy(bool flag);
     //! Check if this is a proxy instance

@@ -424,8 +424,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         pT = Rt->name + "_" + std::to_string(elementIndexs[ie->getId()]);
       }
       // RTq_0(ln(kq_0)−1)
-      std::string energy =
-          pR + "*" + pT + "*" + state + "*(log(" + parm + "*" + state + ")-1.0)";
+      std::string energy = pR + "*" + pT + "*" + state + "*(log(" + parm + "*" +
+                           state + ")-1.0)";
       hamiltonianString.push_back(energy);
     }
     result["stateVector"] = to_json(stateVariables);
@@ -2161,33 +2161,45 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymbolicMatrix matGtPt = matGt - matPT;
     SymbolicMatrix matMS = matM + matS;
 
-    //Compute the phs \dot{x} = matJR \partial H + matGP u
+    /* Code for computing critical points >>>>*/
+    // //Compute the phs \dot{x} = matJR \partial H + matGP u
 
-    //Get the \partial{H} vector
-    const int numStateVar = stateVariables.rows();
-    SymbolicMatrix partials(numStateVar,1);
-    for(int si=0;si<numStateVar;si++){
-      partials(si,0) = SymEngine::simplify(hmexp.diff(stateVariables(si,0).get_basic(),false));
-    }
+    // //Get the \partial{H} vector
+    // const int numStateVar = stateVariables.rows();
+    // SymbolicMatrix partials(numStateVar,1);
+    // for(int si=0;si<numStateVar;si++){
+    //   partials(si,0) =
+    //   SymEngine::simplify(hmexp.diff(stateVariables(si,0).get_basic(),false));
+    // }
 
-    //std::cout<<"Hamiltonian \n"<<hmexp<<std::endl<<std::endl;
-    //std::cout<<"Partials \n"<<to_json(partials)<<std::endl<<std::endl;
+    // std::cout<<"Hamiltonian \n"<<hmexp<<std::endl<<std::endl;
+    // std::cout<<"Partials \n"<<to_json(partials)<<std::endl<<std::endl;
     // std::cout<<"matJR \n"<<to_json(matJR)<<std::endl<<std::endl;
     // std::cout<<"matGP \n"<<to_json(matGP)<<std::endl<<std::endl;
     // std::cout<<"vecU \n"<<to_json(vecU)<<std::endl<<std::endl;
-    SymbolicMatrix mp = matJR*partials + matGP*vecU;
-    //std::cout<<"MP \n"<<to_json(mp)<<std::endl<<std::endl;
-    //Build rows into expressions and solve for each state variable
-    for(int si=0;si<numStateVar;si++){
-      auto exp = SymEngine::simplify(SymEngine::exp(mp(si,0)));
-      std::cout<<exp->__str__()<<std::endl<<std::endl;
-      auto solutionSet = SymEngine::solve(exp, SymEngine::symbol(stateVariables(si,0).get_basic()->__str__()));
-      auto solutions = solutionSet->get_args();
-      for(int ssi=0;ssi<solutions.size();ssi++){
-        std::cout<<si<<"\t"<<solutions[si]->__str__()<<std::endl;
-      }
-      std::cout<<std::endl;
-    }
+    // SymbolicMatrix mp = matJR*partials + matGP*vecU;
+    // std::cout<<"MP \n"<<to_json(mp)<<std::endl<<std::endl;
+
+    // Build rows into expressions and solve for each state variable
+    // for(int si=0;si<numStateVar;si++){
+    //   //auto exp = SymEngine::simplify(SymEngine::exp(mp(si,0)));
+    //   auto exp = SymEngine::simplify(mp(si,0));
+    //   std::cout<<exp->__str__()<<std::endl<<std::endl;
+    //   try{
+    //     auto solutionSet = SymEngine::solve(exp,
+    //     SymEngine::symbol(stateVariables(si,0).get_basic()->__str__()));
+
+    //     auto solutions = solutionSet->get_args();
+    //     for(int ssi=0;ssi<solutions.size();ssi++){
+    //       std::cout<<si<<"\t"<<solutions[si]->__str__()<<std::endl;
+    //     }
+    //     std::cout<<std::endl;
+    //   }catch(SymEngine::SymEngineException& ex){
+    //     std::cout<<" Failed solve for
+    //     "<<stateVariables(si,0).get_basic()->__str__()<<std::endl;
+    //   }
+    // }
+    /*<<< Code for computing critical points*/
 
     nlohmann::json phs;
     phs["matJR"] = to_json(matJR);

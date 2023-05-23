@@ -324,16 +324,16 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
         if(unitName!="UNIT_NAME_NOT_FOUND"){
           definedNames[var.first] = unitName;
           mapUnits[unitName] = true;
-          if (cellMLDefinitions.find(dim) == cellMLDefinitions.end()) {
-            auto res = unitMap.getCellMLDef(unitName);
-            units::precise_unit unitDef = std::get<2>(res);
-            existingUnits[unitName] = unitDef;
-            cellMLDefinitions[dim] = res;
-          } else {
-            auto res = cellMLDefinitions[dim];
-            units::precise_unit unitDef = std::get<2>(res);
-            existingUnits[unitName] = unitDef;
-          }
+          // if (cellMLDefinitions.find(dim) == cellMLDefinitions.end()) {
+          //   auto res = unitMap.getCellMLDef(unitName);
+          //   units::precise_unit unitDef = std::get<2>(res);
+          //   existingUnits[unitName] = unitDef;
+          //   cellMLDefinitions[dim] = res;
+          // } else {
+          //   auto res = cellMLDefinitions[dim];
+          //   units::precise_unit unitDef = std::get<2>(res);
+          //   existingUnits[unitName] = unitDef;
+          // }
           dimUnitMap[dim] = unitName;
         }else{
           newDims[var.first] = var.second;

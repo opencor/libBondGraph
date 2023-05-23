@@ -107,6 +107,26 @@ void BondGraphElementBase::setName(const std::string &name)
 {
     mName = name;
 }
+//!Get variable name
+std::string BondGraphElementBase::getVariableName(){
+    std::string varname = mName;
+    if(isdigit(mName[0])){
+        if(mName[0]=='0'){
+        varname[0] = 'O';
+        }else if(mName[0]=='1'){
+        varname[0] = 'I';
+        }else{
+        varname = "E_"+mName;
+        }
+    }
+    //Handle :
+    std::replace(varname.begin(), varname.end(), ':', 'c');
+    std::replace(varname.begin(), varname.end(), '^', 'p');
+    std::replace(varname.begin(), varname.end(), '{', 'o');
+    std::replace(varname.begin(), varname.end(), '}', 'x');    
+    return varname;
+}
+
 
 //! Return the element ID.
 std::string BondGraphElementBase::getId() const
