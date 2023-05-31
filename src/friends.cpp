@@ -37,6 +37,24 @@ nlohmann::json getSupportedPhysicalDomainsAndFactoryMethods() {
 	result["Electrical"] = mtsElectrical;
 	
 	
+	nlohmann::json mtsMechanical;
+	mtsMechanical["Capacitance"]="createLinearSpring";
+	mtsMechanical["Inductance"]="createMass";
+	mtsMechanical["Resistance"]="createLinearDamper";
+	mtsMechanical["PotentialSource"]="createConstantForce";
+	mtsMechanical["FlowSource"]="createConstantVelocity";
+	result["Mechanical"] = mtsMechanical;
+	
+	
+	nlohmann::json mtsHydraulic;
+	mtsHydraulic["Capacitance"]="createFluidCompliance";
+	mtsHydraulic["Inductance"]="createFluidInertance";
+	mtsHydraulic["Resistance"]="createViscousResistance";
+	mtsHydraulic["PotentialSource"]="createConstantFluidPressureSource";
+	mtsHydraulic["FlowSource"]="createConstantFluidFlowSource";
+	result["Hydraulic"] = mtsHydraulic;
+	
+	
 	nlohmann::json mtsBiochemical;
 	mtsBiochemical["Reaction"]="createReaction";
 	mtsBiochemical["Concentration"]="createConcentration";
@@ -60,7 +78,7 @@ nlohmann::json getSupportedPhysicalDomainsAndFactoryMethods() {
 	mtsComposition["UserDefined"]="createUserDefined";
 	result["Composition"] = mtsComposition;
 	
-	result["Domains"] = nlohmann::json::array({"Biochemical","Electrical","Biochemical","Generic","Composition"});
+	result["Domains"] = nlohmann::json::array({"Biochemical","Electrical","Mechanical","Hydraulic","Biochemical","Generic","Composition"});
 
 	result["ElementDefinitions"]  = nlohmann::json::parse(std::string(metadatastring));
 	return result;

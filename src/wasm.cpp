@@ -62,6 +62,7 @@ static RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson){
         auto def = val["definition"];
         auto edef = def["annotation"]["ElementDefinition"];
         auto sp = def["annotation"]["statesAndParameters"];
+        auto annot = def["annotation"]["Annotation"];
         std::string displayName = def["displayname"];
         //std::replace(displayName.begin(), displayName.end(), ':', 'c');
 
@@ -201,6 +202,7 @@ static RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson){
             }
           }
         }
+        bge->setPMRAnnotation(annot);
         elements[dName] = bge;
         ioBondGraph->addComponent(bge);
       }

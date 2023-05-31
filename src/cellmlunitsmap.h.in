@@ -149,8 +149,7 @@ public:
         std::string multiplier = ss.str();
         ss.str("");
         ss.clear();
-        //std::cout<<unit<<"\t"<<units::to_string(unitDef)<<"\t"<<units::to_string(units::precise_unit(baseU))<<"\t"<<mult<<std::endl;
-        //Cellml units
+        //Check for Cellml standard units
         bool cellmlbaseunitfound = false;
         std::string basesiunit = units::to_string(units::precise_unit(baseU));
         if(basesiunit=="V"){
@@ -320,7 +319,7 @@ public:
                 uname = "mole";
                 isStandardUnit = true;
             }else{
-                uname = unit;//"Dim"+std::to_string(mappedDimensionName.size()+1);
+                uname = unit;
                 //Definition does not exist
                 if (existingNames.find(unit) == existingNames.end()) {
                     //Replace any _, ^
@@ -336,7 +335,6 @@ public:
                     }
                 }
             }
-            //uname = "Dim"+std::to_string(mappedDimensionName.size()+1);
             mappedDimensionName[unit] = uname;
         }else{
             uname = mappedDimensionName[unit];

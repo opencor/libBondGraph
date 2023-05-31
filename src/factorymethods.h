@@ -58,6 +58,86 @@ EXPORTED RCPLIB::RCP<BGElement> createConstantCurrentSource(const RCPLIB::RCP< B
 
         
 /**
+* @brief Create a Capacitance instance, Linear Elastic Spring
+* Physical domain Mechanical
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createLinearSpring(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a Inductance instance, Mass
+* Physical domain Mechanical
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createMass(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a Resistance instance, Linear damping
+* Physical domain Mechanical
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createLinearDamper(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a PotentialSource instance, Constant Point Force
+* Physical domain Mechanical
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createConstantForce(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a FlowSource instance, Constant Linear Velocity
+* Physical domain Mechanical
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createConstantVelocity(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a Capacitance instance, Vessal wall compliance
+* Physical domain Hydraulic
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createFluidCompliance(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a Inductance instance, Fluid Inertia
+* Physical domain Hydraulic
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createFluidInertance(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a Resistance instance, Viscous Resistance
+* Physical domain Hydraulic
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createViscousResistance(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a PotentialSource instance, Constant Fluid Pressure
+* Physical domain Hydraulic
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createConstantFluidPressureSource(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
+* @brief Create a FlowSource instance, Constant Fluid Flow
+* Physical domain Hydraulic
+* @return Reference counted pointer to the element 
+*/
+EXPORTED RCPLIB::RCP<BGElement> createConstantFluidFlowSource(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+
+        
+/**
 * @brief Create a PotentialSource instance, Constant Potential Source
 * Physical domain Generic
 * @return Reference counted pointer to the element 

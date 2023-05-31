@@ -163,7 +163,7 @@ if(PARSE_AND_CREATE_FACTORY_METHODS)
     COMMENT "Generating Domain specific factory methods for bg components"
   )
 
-  add_dependencies(${PROJECT_NAME} factorymethods)
+  #add_dependencies(${PROJECT_NAME} factorymethods)
 endif()
 
 if(NOT EMSCRIPTEN)
@@ -178,6 +178,10 @@ if(NOT EMSCRIPTEN)
   include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/units/units)
   include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/)
   include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
+
+  if(PARSE_AND_CREATE_FACTORY_METHODS)
+    add_dependencies(${PROJECT_NAME} factorymethods)
+  endif()
 
   target_include_directories(${PROJECT_NAME}
     PRIVATE
@@ -284,6 +288,11 @@ else(NOT EMSCRIPTEN)
   include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/unitproxy/)
   include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/)
   include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
+
+  if(PARSE_AND_CREATE_FACTORY_METHODS)
+    add_dependencies(${PROJECT_NAME}_WASM_LIB factorymethods)
+  endif()
+
 
   target_include_directories(${PROJECT_NAME}_WASM_LIB
     PRIVATE

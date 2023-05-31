@@ -28,10 +28,13 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
     if (importName.find(k) != importName.end()) {
       assignedImportName = importName[k];
     }
+    
     if (val["typeId"] == "BGElement") {
       auto def = val["definition"];
       auto edef = def["annotation"]["ElementDefinition"];
       auto sp = def["annotation"]["statesAndParameters"];
+      auto annot = def["annotation"]["Annotation"];
+
       std::string displayName = def["displayname"];
       std::replace(displayName.begin(), displayName.end(), ':', 'c');
       // .replace("^", "_p_")
@@ -177,6 +180,8 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
           }
         }
       }
+      bge->setPMRAnnotation(annot);
+
       elements[dName] = bge;
       ioBondGraph->addComponent(bge);
     }
@@ -235,9 +240,10 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
       }
     }
   }
+  
   std::cout << file << std::endl;
-  nlohmann::json res = ioBondGraph->computePortHamiltonian();
-  std::cout<< res.dump() << std::endl;
+  //nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  //std::cout<< res.dump() << std::endl;
   auto eqs = ioBondGraph->computeStateEquation();
   auto files = getCellML("RLC", ioBondGraph, eqs);
   std::cout<< files["RLC.cellml"]<<std::endl;
@@ -410,7 +416,9 @@ int main(int argc, char *argv[]) {
   // eReaction();
   //loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
+  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
+  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Annotation/RCannotationtest.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Andre/Andre.json");
   return 0;
 }

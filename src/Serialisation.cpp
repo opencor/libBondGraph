@@ -53,18 +53,6 @@ std::string getMathML(const RCPLIB::RCP<const SymEngine::Basic> &expr) {
   };
 
   toCellMLUnit();
-
-  // boost::regex lx(R"(<apply><times\/><cn
-  // cellml:units=\"dimensionless\">-1<\/cn><ci>([\w]+)<\/ci><\/apply>)");
-
-  // if (boost::regex_match(expression, lx, boost::match_extra))
-  // {
-  //      boost::smatch what;
-  //      boost::regex_search(expression, what, lx);
-  //      std::cout<<what[1].str();
-  // }
-
-  // std::cout<<*SymEngine::simplify(expr)<<std::endl;
   return expression;
 }
 
@@ -271,12 +259,15 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   SymEngine::vec_basic &constraints = bgequations.constraints;
   std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
       dimensions = bgequations.physicalDimensions;
+  std::unordered_map<std::string,std::vector<nlohmann::json>>& annotations = bgequations.annotations;
   std::map<std::string, std::string> files;
   std::vector<std::string> connections;
   std::map<std::string, std::string> imports;
   std::vector<std::string> blocks;
+  std::map<std::string, std::vector<unsigned int>> cmetaid;
+  unsigned int metaid = 1;
 
-  std::ostringstream cellML;
+  std::ostringstream cellML, metaidGen,cmetass;
   // std::tie(solvable, equations, bondEquations, constraints, dimensions) =
   // bgequations; Find equations whose lhs has dot_
   std::unordered_map<std::string, std::string> derivatives;
@@ -305,7 +296,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   std::map<std::string, bool> mapUnits;
   std::map<std::string, units::precise_unit> existingUnits;
   std::map<std::string, std::string> defineUnits;
-  std::map<std::string, std::string> definedNames;
+  std::map<std::string, std::string> definedUnitNames;
   std::map<std::string, std::string> dimUnitMap;
   std::map<std::string,
            std::tuple<std::string, std::string, units::precise_unit>>
@@ -313,34 +304,31 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   // Create variables and their annotations
   std::map<std::string, std::tuple<std::string, std::string, char>> orderedDim(
       dimensions.begin(), dimensions.end());
+
+  auto getMetaIDString = [&metaidGen](unsigned int mi){
+    metaidGen.str("");
+    metaidGen.clear();
+    metaidGen <<"id_"<<std::setw(9) << std::setfill('0')<< mi;
+    return metaidGen.str();
+  };
+
   std::map<std::string, std::tuple<std::string, std::string, char>> newDims;
   for (auto var : orderedDim) {
     std::string dim = std::get<0>(var.second);
     std::string unitName = dim;
 
       if (dim != "") {       
-      
         unitName = unitMap.getUnitName(dim);
         if(unitName!="UNIT_NAME_NOT_FOUND"){
-          definedNames[var.first] = unitName;
+          definedUnitNames[var.first] = unitName;
           mapUnits[unitName] = true;
-          // if (cellMLDefinitions.find(dim) == cellMLDefinitions.end()) {
-          //   auto res = unitMap.getCellMLDef(unitName);
-          //   units::precise_unit unitDef = std::get<2>(res);
-          //   existingUnits[unitName] = unitDef;
-          //   cellMLDefinitions[dim] = res;
-          // } else {
-          //   auto res = cellMLDefinitions[dim];
-          //   units::precise_unit unitDef = std::get<2>(res);
-          //   existingUnits[unitName] = unitDef;
-          // }
           dimUnitMap[dim] = unitName;
         }else{
           newDims[var.first] = var.second;
         }
       } else {
         unitName = "dimensionless";
-        definedNames[var.first] = unitName;
+        definedUnitNames[var.first] = unitName;
         // mapUnits[unitName] = true; //dimensionless is predefined, so no need
         // to define it
         existingUnits[unitName] = units::precise::one;
@@ -372,7 +360,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       existingUnits[unitName] = unitDef;
       defineUnits[unitName] = std::get<1>(res);
     }
-    definedNames[var.first] = std::get<0>(res);
+    definedUnitNames[var.first] = std::get<0>(res);
     dimUnitMap[dim] = unitName;
   }
 
@@ -459,7 +447,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       // Check if value is json, in which case another map is created
       auto js = std::get<1>(var.second).find('{') == std::string::npos;
       if (js) {
-        std::string unitName = definedNames[var.first];
+        std::string unitName = definedUnitNames[var.first];
         connect << "<map_variables variable_1 = \"" << var.first
                 << "\" variable_2 = \"" << var.first << "\" />" << std::endl;
         mapParameterFile << "<variable initial_value = \""
@@ -656,55 +644,109 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
 
   for (auto var : orderedDim) {
     std::string dim = std::get<0>(var.second);
-    std::string unitName = definedNames[var.first];
+    std::string unitName = definedUnitNames[var.first];
     std::string value = std::get<1>(var.second);
     std::string initVal = "initial_value = \"" + value + "\"";
     if (computedVariables[var.first]) {
       initVal = "";
     }
 
+
+    //Check here if a variable has an annotation and add to the variable definition
+    //<variable cmeta:id="id_00000000" initial_value="" name="" units=""/>
+    
+    cmetass.str("");
+    cmetass.clear();
+    if(annotations.find(var.first)!=annotations.end()){
+       for(size_t i=0;i<annotations[var.first].size();i++){
+        if(i==0){
+          cmetass<<getMetaIDString(metaid);
+        }else{
+          cmetass<<" id=\""<<getMetaIDString(metaid)<<"\"";
+        }
+        cmetaid[var.first].push_back(metaid++);
+       }
+    }
+    std::string cmeta = cmetass.str();
     switch (std::get<2>(var.second)) {
     case 'p': {
-      cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-             << "\" public_interface = \"in\" />";
+      if(cmeta.size()==0){
+        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+              << "\" public_interface = \"in\" />";
+      }else{
+        cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
+              << "\" public_interface = \"in\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+      }
       break;
     }
     case 'c': {
       // TODO: These need to be mapped to a component
       if (mappedVariables.find(var.first) == mappedVariables.end()) {
-        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+        if(cmeta.size()==0){
+          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
                << "\" " << initVal << "/>";
+        }else{
+          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
+               << "\" " << initVal << " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        }
       } else {
-        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-               << "\" public_interface = \"in\" />";
+        if(cmeta.size()==0){
+          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+                << "\" public_interface = \"in\" />";
+        }else{
+          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
+                << "\" public_interface = \"in\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        }
       }
       break;
     }
     case 's': {
       if (var.first.size() > 4 &&
           var.first.substr(0, 4) == "dot_") { // Derivatives are computed
-        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-               << "\" public_interface = \"out\" />";
+        if(cmeta.size()==0){
+          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+                << "\" public_interface = \"out\" />";
+        }else{
+          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
+                << "\" public_interface = \"out\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        }
       } else {
         if (value.find(":") == std::string::npos) // If value is not json
-          cellML << "< variable  name=\"" << var.first << "\" units=\""
-                 << unitName << "\" public_interface = \"out\" " << initVal
-                 << "/>";
+          if(cmeta.size()==0){
+            cellML << "< variable  name=\"" << var.first << "\" units=\""
+                  << unitName << "\" public_interface = \"out\" " << initVal
+                  << "/>";
+          }else{
+            cellML << "< variable  cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\""
+                  << unitName << "\" public_interface = \"out\" " << initVal
+                  << "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";            
+          }
         else { // The value is json and is mapped
           // Create a variable vname_smap that will be mapped
           // Set that variable vname_smap as the initial value
           cellML << "< variable  name=\"" << var.first << "_smap\" units=\""
                  << unitName << "\" public_interface = \"in\" />";
-          cellML << "< variable  name=\"" << var.first << "\" units=\""
-                 << unitName << "\" public_interface = \"out\""
-                 << "initial_value = \"" + var.first + "_smap\" />";
+          if(cmeta.size()==0){
+            cellML << "< variable  name=\"" << var.first << "\" units=\""
+                  << unitName << "\" public_interface = \"out\""
+                  << "initial_value = \"" + var.first + "_smap\" />";
+          }else{
+            cellML << "< variable  cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\""
+                  << unitName << "\" public_interface = \"out\""
+                  << "initial_value = \"" + var.first + "_smap\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+          }
         }
       }
       break;
     }
     default: { // Variables
-      cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-             << "\" public_interface = \"out\" />";
+      if(cmeta.size()==0){
+        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+              << "\" public_interface = \"out\" />";
+      }else{
+        cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
+              << "\" public_interface = \"out\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+      }
       break;
     }
     }
@@ -773,6 +815,31 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   }
   cellML << "</math>" << std::endl;
   cellML << "</component>" << std::endl;
+  //Generate RDF for annotations
+  if(cmetaid.size()>0){
+    cellML << "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" << std::endl;
+    for(const auto& mi : cmetaid){
+      std::vector<nlohmann::json>& avec = annotations[mi.first];   
+      const std::vector<unsigned int>& ids = mi.second; 
+      cellML <<"\t<!--"<<mi.first<<"-->"<<std::endl;
+      for(size_t i=0;i<avec.size();i++){
+        auto& anot = avec[i];
+        std::string metaid = getMetaIDString(ids[i]);
+        cellML << "\t<rdf:Description rdf:about=\"#"<<metaid<<"\">"<<std::endl;
+        std::string rel = anot["relationship"];
+        std::string identifiers_org_uri = anot["annotation"]["identifiers_org_uri"];
+        auto ploc = rel.rfind(":");
+        if (ploc != std::string::npos) {
+          rel = rel.substr(ploc+1,rel.size());
+        }         
+        cellML << "\t\t<"<<rel<<" xmlns=\"http://biomodels.net/biology-qualifiers/\">"<<std::endl;
+        cellML << "\t\t\t<rdf:Description rdf:about=\""<<identifiers_org_uri<<"\"/>"<<std::endl;
+        cellML << "\t\t</"<<rel<<">"<<std::endl;
+        cellML << "\t</rdf:Description>"<<std::endl;
+      }
+    }
+    cellML << "</rdf:RDF>" << std::endl;
+  }
   cellML << "</model>";
 
   std::string computedCellML = cellML.str();

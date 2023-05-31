@@ -31,7 +31,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   std::unordered_map<std::string, RCPLIB::RCP<const SymEngine::Basic>>
       nonlinearTermSubs;
   std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
-      dimensions; // varible name, value, state, control or parameter
+      dimensions; // variable name, value, state, control or parameter
+  std::unordered_map<std::string,std::vector<nlohmann::json>> annotations;
   std::unordered_map<size_t, SymEngine::map_basic_basic>
       portHamiltonianCoordinates;
   // Global dof matrix
@@ -41,6 +42,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   mRcount = 0; // Number of dissipative bonds
   mJcount = 0; // Number of junction bonds
   mSources.clear();
+  //
   // Find all the connected components
 
   std::vector<RCPLIB::RCP<BGElement>> connectedComponents;
@@ -62,7 +64,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
            mBonds.size());
   long int dofID = 0;
   int portID = 0;
-  std::ostringstream ss, dss, ess, fss;
+  std::ostringstream ss, dss, ess, fss, pss;
 
   auto getPreciseUnitString = [](std::string &uns) {
     units::precise_unit un = units::unit_from_string(uns);
@@ -83,6 +85,39 @@ ComputeEquationResults BondGraph::computeStateEquation() {
                               units::precise::second);
     }
     return units::to_string(units::precise::hertz);
+  };
+
+  auto setupAnnotation = [&annotations](const RCPLIB::RCP<BondGraphElementBase>& mc,std::string dofmap){
+    //&elementPropertyMetaDataIDMap,&metaDataIDAnnotationMap
+    nlohmann::json anot = mc->getPMRAnnotation();
+    if(anot.size()>0){
+      std::string dofn = dofmap;
+      auto ploc = dofn.rfind("_");
+      if (ploc != std::string::npos) {
+        dofn = dofn.substr(0, ploc);
+      }
+      for (auto& el : anot.items())
+      {
+        nlohmann::json vals = el.value();
+        if(vals.size()>0){
+          std::string relationship = el.key();
+          for(auto& a : vals){
+            std::string prop = a["property"];
+            ploc = prop.rfind("_");
+            if (ploc != std::string::npos) {
+              prop = prop.substr(0, ploc);
+            }            
+            if(prop.compare(dofn)==0){
+              nlohmann::json newAnot(a);
+              newAnot["relationship"] = relationship;
+              annotations[dofmap].push_back(newAnot);
+              //std::cout<<__FILE__<<"\t"<<__LINE__<<"\t"<<dofmap<<"\t"<<newAnot.dump(1)<<std::endl;
+            }              
+          }
+        }
+      }
+      
+    }
   };
 
   // Do storage, dissipative, junction, source
@@ -140,7 +175,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
           std::make_tuple(getPreciseUnitStringPerSecond(un), "0",
                           'd'); // units::to_string(units::precise_unit(baseU,
                                 // mult) / units::precise::second);
-
+      setupAnnotation(mc,ss.str());
       ++portID;
       ++dofID;
       ++mScount;
@@ -156,6 +191,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
               std::make_tuple(getPreciseUnitString(un), vn, 'p');
           // logInfo("Dimensions for parameter ", pname, " = ",
           // std::get<0>(dimensions[pname]));
+          setupAnnotation(mc,pname);
         }
       }
     }
@@ -182,7 +218,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
           ss << stateName;
         }
         ss << dofID;
-
+        
         x.push_back(SymEngine::symbol(ss.str()));
         dss << "dot_" << ss.str();
         dx.push_back(SymEngine::symbol(dss.str()));
@@ -206,6 +242,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         // std::get<0>(dimensions[ss.str()]));
         dimensions[dss.str()] =
             std::make_tuple(getPreciseUnitStringPerSecond(un), "0", 'd');
+        setupAnnotation(mc,ss.str());
         globalCoordinates[SymEngine::parse(stateName)] =
             SymEngine::parse(ss.str());
         globalCoordinates[SymEngine::parse("dot_" + stateName)] =
@@ -231,10 +268,12 @@ ComputeEquationResults BondGraph::computeStateEquation() {
               std::make_tuple(getPreciseUnitString(un), vn, 'p');
           // logInfo("Dimensions for parameter ", pname, " = ",
           // std::get<0>(dimensions[pname]));
+          setupAnnotation(mc,pname);
         }
       }
       portHamiltonianCoordinates[dofID] = globalCoordinates;
     }
+
   }
   // Do for resistors
   for (auto &mc_ : connectedComponents) {
@@ -274,6 +313,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
               std::make_tuple(getPreciseUnitString(un), vn, 'p');
           // logInfo("Dimensions for parameter ", pname, " = ",
           // std::get<0>(dimensions[pname]));
+          setupAnnotation(mc,pname);
         }
       }
     }
@@ -316,6 +356,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         // Control variables have a derivative term
         dimensions["dot_" + ess.str()] =
             std::make_tuple(getPreciseUnitStringPerSecond(un), "0", 'c');
+        setupAnnotation(mc,ess.str());
       }
       mSources.push_back(mc);
       ++portID;
@@ -365,6 +406,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
                 std::make_tuple(getPreciseUnitString(un), vn, 'p');
             // logInfo("Dimensions for parameter ", pname, " = ",
             // std::get<0>(dimensions[pname]));
+            setupAnnotation(mc,pname);
           }
         }
       }
@@ -412,6 +454,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   // Handle constitutive relations
   // Create coordinate map
   coordinateMap.clear();
+
   long int di = 0;
   for (auto &c : dofs) {
     ss.str("");
@@ -967,7 +1010,19 @@ ComputeEquationResults BondGraph::computeStateEquation() {
 
   ComputeEquationResults results;
   results.bondGraphValidity = solvable;
-
+  results.annotations.clear();
+  
+  //Do name mapping for annotations
+  for(const auto& c : annotations){
+    if (nameMap.find(c.first) != nameMap.end()){
+      results.annotations[nameMap[c.first]] = c.second;
+      //std::cout<<__FILE__<<" "<<__LINE__<<" Var "<<c.first<<" mapped into "<<nameMap[c.first]<<std::endl;
+    }
+    else
+      results.annotations[c.first] = c.second;    
+  }
+  
+   
   // results.dof = equations;
   for (auto &k : equations) {
     auto simp = SymEngine::simplifyExpLog(k.second)->subs(nameMapSubs);
