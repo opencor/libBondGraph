@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://gnu.org/licenses>.
 
 *******************************************************************************/
+
 #pragma once
 #include "RCP.h"
 #include "export.h"
@@ -749,4 +750,4 @@ EXPORTED void from_json(const nlohmann::json &j, RCPLIB::RCP<Value> &p);
 EXPORTED void from_json(const nlohmann::json &j, units::precise_unit &p);
 EXPORTED void to_json(nlohmann::json &j, const units::precise_unit &p);
 
-} // End of namespace BG
+} // namespace BG

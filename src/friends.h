@@ -37,7 +37,7 @@ namespace BG {
 
 /**
 Source JSON used to define domains and factoryMethods
-//Generated on 01 June, 2023 19:31:29
+//Generated on 01 June, 2023 23:26:32
 
 {
     "Annotation": {

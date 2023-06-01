@@ -192,14 +192,12 @@ endif()
 include(GNUInstallDirs)
 
 # Configure SymEngine using our CMake options:
+# set(SYMENGINE_CLING_LIBRARY_DIR "\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\"")
 configure_file(symengine_config.h.in symengine_config.h)
 configure_file(symengine_config_cling.h.in symengine_config_cling.h)
 
 # Include the config file:
 include_directories(BEFORE ${symengine_BINARY_DIR})
-
-# Since Teuchos is embedded, Teuchos_config.h is available at CMAKE_BINARY_DIR
-include_directories(BEFORE ${CMAKE_BINARY_DIR})
 
 # Include the source directory
 include_directories(BEFORE ${symengine_SOURCE_DIR})
@@ -215,12 +213,29 @@ add_library(${PROJECT_NAME} STATIC ${SRC})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${BG_BOOSTMP_INCLUDE_DIR}
+
+    # "${PROJECT_SOURCE_DIR}/../boostmp_1_77"
 )
 
 include(GenerateExportHeader)
 generate_export_header(${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "symengine_EXPORTS")
 
+# if (BUILD_SHARED_LIBS)
+# set_target_properties(
+# ${PROJECT_NAME}
+# PROPERTIES
+# VERSION ${SYMENGINE_VERSION}
+# SOVERSION ${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
+# )
+# if (WIN32)
+# set_target_properties(
+# ${PROJECT_NAME}
+# PROPERTIES
+# RUNTIME_OUTPUT_NAME ${PROJECT_NAME}-${SYMENGINE_MAJOR_VERSION}.${SYMENGINE_MINOR_VERSION}
+# )
+# endif()
+# endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-Wconversion -Wno-sign-conversion")
     set_source_files_properties(parser/parser.tab.cc PROPERTIES COMPILE_FLAGS "-Wno-conversion")
@@ -229,6 +244,8 @@ endif()
 if(WITH_LLVM AND NOT ${LLVM_VERSION} VERSION_LESS "10.0.0")
     set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 14 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED yes)
 endif()
+
+target_link_libraries(${PROJECT_NAME} teuchos)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     POSITION_INDEPENDENT_CODE ${BUILD_SHARED_LIBS}
@@ -250,9 +267,11 @@ if(BUILD_SYMENGINE_TESTING)
     add_subdirectory(tests)
 endif()
 
-install(TARGETS symengine
-    EXPORT BondGraphTargets
-    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+# install(TARGETS symengine
+# EXPORT BondGraphTargets
+# RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+# )
+
+# install(FILES ${HEADERS} "${symengine_BINARY_DIR}/symengine_config.h" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty/symengine)
