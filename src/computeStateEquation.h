@@ -150,8 +150,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       x.push_back(SymEngine::symbol(ss.str()));
       dss << "dot_" << ss.str();
       dx.push_back(SymEngine::symbol(dss.str()));
-      nameMap[ss.str()] = eName;           //+"_"+ss.str();
-      nameMap[dss.str()] = "dot_" + eName; //+"_"+ss.str();//dss.str();
+      nameMap[ss.str()] = stateName.substr(0, ploc + 1) + "of_" + eName;           //+"_"+ss.str();
+      nameMap[dss.str()] = "dot_" + stateName.substr(0, ploc + 1) + "of_" + eName; //+"_"+ss.str();//dss.str();
 
       ess << "e_" << portID;
       fss << "f_" << portID;
@@ -222,8 +222,8 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         x.push_back(SymEngine::symbol(ss.str()));
         dss << "dot_" << ss.str();
         dx.push_back(SymEngine::symbol(dss.str()));
-        nameMap[ss.str()] = eName;           //+"_"+ss.str();
-        nameMap[dss.str()] = "dot_" + eName; //+"_"+ss.str();
+        nameMap[ss.str()] = stateName.substr(0, ploc + 1) + "of_" + eName;           //+"_"+ss.str();
+        nameMap[dss.str()] = "dot_" + stateName.substr(0, ploc + 1) + "of_" + eName; //+"_"+ss.str();
 
         ess << "e_" << portID;
         fss << "f_" << portID;
