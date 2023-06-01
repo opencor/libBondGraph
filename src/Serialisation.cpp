@@ -825,13 +825,18 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       for(size_t i=0;i<avec.size();i++){
         auto& anot = avec[i];
         std::string metaid = getMetaIDString(ids[i]);
-        cellML << "\t<rdf:Description rdf:about=\"#"<<metaid<<"\">"<<std::endl;
         std::string rel = anot["relationship"];
-        std::string identifiers_org_uri = anot["annotation"]["identifiers_org_uri"];
+        std::string identifiers_org_uri="";
+        if(!anot["annotation"]["identifiers_org_uri"].is_null()){
+         identifiers_org_uri = anot["annotation"]["identifiers_org_uri"];
+        }else if(!anot["annotation"]["owlapi_url"].is_null()){
+          identifiers_org_uri = anot["annotation"]["owlapi_url"];
+        }
         auto ploc = rel.rfind(":");
         if (ploc != std::string::npos) {
           rel = rel.substr(ploc+1,rel.size());
-        }         
+        }
+        cellML << "\t<rdf:Description rdf:about=\"#"<<metaid<<"\">"<<std::endl;        
         cellML << "\t\t<"<<rel<<" xmlns=\"http://biomodels.net/biology-qualifiers/\">"<<std::endl;
         cellML << "\t\t\t<rdf:Description rdf:about=\""<<identifiers_org_uri<<"\"/>"<<std::endl;
         cellML << "\t\t</"<<rel<<">"<<std::endl;

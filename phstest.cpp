@@ -419,6 +419,6 @@ int main(int argc, char *argv[]) {
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Annotation/RCannotationtest.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Andre/Andre.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/A_simple_electrical_circuit.json");
   return 0;
 }

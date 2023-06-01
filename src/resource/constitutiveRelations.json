@@ -1,7 +1,7 @@
 {
   "ElementDefinitions": {
     "Electrical": {
-      "location": 1,
+      "location": 2,
       "Resistance": {
         "description": "Linear Resistor",
         "name": "Resistor",
@@ -110,7 +110,7 @@
       }
     },
     "Mechanical": {
-      "location": 1,
+      "location": 4,
       "Resistance": {
         "description": "Linear damping",
         "name": "LinearDamper",
@@ -219,7 +219,7 @@
       }
     },
     "Hydraulic": {
-      "location": 3,
+      "location": 5,
       "Resistance": {
         "description": "Viscous Resistance",
         "name": "ViscousResistance",
@@ -328,7 +328,7 @@
       }
     },
     "Biochemical": {
-      "location": 2,
+      "location": 3,
       "Reaction": {
         "name": "Reaction",
         "description": "Biochemical Reaction",
@@ -457,7 +457,7 @@
       }
     },
     "Generic": {
-      "location": 3,
+      "location": 1,
       "Transformer": {
         "name": "Transformer",
         "description": "Linear Transformer",
@@ -604,7 +604,7 @@
       }
     },
     "Composition": {
-      "location": 4,
+      "location": 6,
       "CellML": {
         "name": "cellml",
         "description": "CellML blackbox",
@@ -617,7 +617,7 @@
       }
     },
     "Annotation": {
-      "location": 5,
+      "location": 7,
       "Region": {
         "name": "region",
         "description": "Spatial Annotation",
