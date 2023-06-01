@@ -90,6 +90,7 @@ BondGraphElementBase::BondGraphElementBase(const RCPLIB::RCP<BGElement>  &data_)
     mParameter(RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(data_)->mParameter)
 {
     parent = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(data_)->parent;
+    annotation = {};
 }
 
 BondGraphElementBase::~BondGraphElementBase()
@@ -107,6 +108,26 @@ void BondGraphElementBase::setName(const std::string &name)
 {
     mName = name;
 }
+//!Get variable name
+std::string BondGraphElementBase::getVariableName(){
+    std::string varname = mName;
+    if(isdigit(mName[0])){
+        if(mName[0]=='0'){
+        varname[0] = 'O';
+        }else if(mName[0]=='1'){
+        varname[0] = 'I';
+        }else{
+        varname = "E_"+mName;
+        }
+    }
+    //Handle :
+    std::replace(varname.begin(), varname.end(), ':', 'c');
+    std::replace(varname.begin(), varname.end(), '^', 'p');
+    std::replace(varname.begin(), varname.end(), '{', 'o');
+    std::replace(varname.begin(), varname.end(), '}', 'x');    
+    return varname;
+}
+
 
 //! Return the element ID.
 std::string BondGraphElementBase::getId() const
@@ -350,6 +371,16 @@ RCPLIB::RCP<Value> BondGraphElementBase::setUniversalConstant(std::string name, 
     auto uCont = setParameter(name, value, unit);
     uCont->universalConstant = true;
     return uCont;
+}
+
+//! Set the PMR annotation
+void BondGraphElementBase::setPMRAnnotation(nlohmann::json& annotation_){
+    annotation = nlohmann::json(annotation_);
+}
+
+//! Get the PMR annotation
+nlohmann::json& BondGraphElementBase::getPMRAnnotation(){
+    return annotation;
 }
 
 } // namespace BG

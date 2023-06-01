@@ -18,14 +18,14 @@ along with this program. If not, see <https://gnu.org/licenses>.
 *******************************************************************************/
 
 #include "Port.h"
-
+#include <string>
 namespace BG {
     Port::Port(bool inPower) 
     {
         weight = 1.0;
         receivesPower = inPower;
         portNo = portCounter++;
-        id = ""+portNo;
+        id = std::to_string(portNo);
     }
 
     Port::~Port() {

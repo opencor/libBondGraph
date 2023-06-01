@@ -1,2 +1,6 @@
-build
-install
+install*
+build*
+emsdk*
+unitproxy_truc
+.vscode
+.pdb

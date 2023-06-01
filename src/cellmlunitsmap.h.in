@@ -131,7 +131,9 @@ public:
         if (existingNames.find(unit) != existingNames.end()) {
             return existingNames[unit];
         }
-        throw BGException("Name for unit " + unit + " not found");
+        //WASM doesnt handle exceptions well, so returing a unique string
+        return "UNIT_NAME_NOT_FOUND";
+        //throw BGException("Name for unit " + unit + " not found");
     }
 
     std::tuple<std::string,std::string,units::precise_unit> getCellMLDef(const std::string& unit){
@@ -147,135 +149,203 @@ public:
         std::string multiplier = ss.str();
         ss.str("");
         ss.clear();
-        if(baseU.meter()!=0){
-            std::string mx = multiplier;
-            if(baseU.meter()<0){
-                mx = "";
-            }
-            if(baseU.meter()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.meter())+"\" units=\"metre\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"metre\" />");
-            }
-            if(baseU.meter()>0){
-                multiplier = "";
-            }            
+        //Check for Cellml standard units
+        bool cellmlbaseunitfound = false;
+        std::string basesiunit = units::to_string(units::precise_unit(baseU));
+        if(basesiunit=="V"){
+            basesiunit = "volt";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="A"){
+            basesiunit = "ampere";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="F"){
+            basesiunit = "farad";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="C"){
+            basesiunit = "coulomb";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="C"){
+            basesiunit = "coulomb";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="1/S"){
+            basesiunit = "ohm";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="S"){
+            basesiunit = "siemens";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="K"){
+            basesiunit = "kelvin";
+            cellmlbaseunitfound = true;
+        }else if(basesiunit=="mol"){
+            basesiunit = "mole";
+            cellmlbaseunitfound = true;
         }
-        if(baseU.kg()!=0){
-            std::string mx = multiplier;
-            if(baseU.kg()<0){
-                mx = "";
-            }            
-            if(baseU.kg()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kg())+"\" units=\"kilogram\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"kilogram\" />");
-            }
-            if(baseU.kg()>0){
-                multiplier = "";
-            }             
-        }
-        if(baseU.second()!=0){
-            std::string mx = multiplier;
-            if(baseU.second()<0){
-                mx = "";
-            }            
-            if(baseU.second()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.second())+"\" units=\"second\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"second\" />");
-            }
-            if(baseU.second()>0){
-                multiplier = "";
-            }             
-        }
-        if(baseU.ampere()!=0){
-            std::string mx = multiplier;
-            if(baseU.ampere()<0){
-                mx = "";
-            }            
-            if(baseU.ampere()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.ampere())+"\" units=\"ampere\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"ampere\" />");
-            }
-            if(baseU.ampere()>0){
-                multiplier = "";
-            }             
-        }
-        if(baseU.kelvin()!=0){
-            std::string mx = multiplier;
-            if(baseU.kelvin()<0){
-                mx = "";
-            }            
-            if(baseU.kelvin()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kelvin())+"\" units=\"kelvin\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"kelvin\" />");
-            }
-            if(baseU.kelvin()>0){
-                multiplier = "";
-            }             
-        }
-        if(baseU.mole()!=0){
-            std::string mx = multiplier;
-            if(baseU.mole()<0){
-                mx = "";
-            }            
-            if(baseU.mole()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.mole())+"\" units=\"mole\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"mole\" />");
-            }
-            if(baseU.mole()>0){
-                multiplier = "";
-            }             
-        }        
-        if(baseU.candela()!=0){
-            std::string mx = multiplier;
-            if(baseU.candela()<0){
-                mx = "";
-            }            
-            if(baseU.candela()!=1){
-                unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.candela())+"\" units=\"candela\" />");
-            }else{
-                unitl.push_back("<unit "+mx+" units=\"candela\" />");
-            }
-            if(baseU.candela()>0){
-                multiplier = "";
-            }             
-        } 
 
-        std::string uname = unit;
-        /*
-        auto replace = [&uname](std::string from, std::string to) {
-            size_t start_pos = 0;
-            while ((start_pos = uname.find(from, start_pos)) != std::string::npos) {
-                uname.replace(start_pos, from.length(), to);
-                start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+        if(cellmlbaseunitfound){
+            if(mult!=1.0){
+                unitl.push_back("<unit "+multiplier+" units=\""+basesiunit+"\" />");
+            }else{
+                unitl.push_back("<unit units=\""+basesiunit+"\" />");
             }
-            return uname;
-        };
-        replace("/","_d_");
-        replace("*", "_x_");
-        replace("-","_m_");
-        replace("^", "p");
-        replace("__","_");
-        if(isdigit(uname[0])){
-            uname = "D"+uname;
+        }else{
+            if(baseU.meter()!=0){
+                std::string mx = multiplier;
+                if(baseU.meter()<0){
+                    mx = "";
+                }
+                if(baseU.meter()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.meter())+"\" units=\"metre\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"metre\" />");
+                }
+                if(baseU.meter()>0){
+                    multiplier = "";
+                }            
+            }
+            if(baseU.kg()!=0){
+                std::string mx = multiplier;
+                if(baseU.kg()<0){
+                    mx = "";
+                }            
+                if(baseU.kg()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kg())+"\" units=\"kilogram\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"kilogram\" />");
+                }
+                if(baseU.kg()>0){
+                    multiplier = "";
+                }             
+            }
+            if(baseU.second()!=0){
+                std::string mx = multiplier;
+                if(baseU.second()<0){
+                    mx = "";
+                }            
+                if(baseU.second()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.second())+"\" units=\"second\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"second\" />");
+                }
+                if(baseU.second()>0){
+                    multiplier = "";
+                }             
+            }
+            if(baseU.ampere()!=0){
+                std::string mx = multiplier;
+                if(baseU.ampere()<0){
+                    mx = "";
+                }            
+                if(baseU.ampere()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.ampere())+"\" units=\"ampere\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"ampere\" />");
+                }
+                if(baseU.ampere()>0){
+                    multiplier = "";
+                }             
+            }
+            if(baseU.kelvin()!=0){
+                std::string mx = multiplier;
+                if(baseU.kelvin()<0){
+                    mx = "";
+                }            
+                if(baseU.kelvin()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.kelvin())+"\" units=\"kelvin\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"kelvin\" />");
+                }
+                if(baseU.kelvin()>0){
+                    multiplier = "";
+                }             
+            }
+            if(baseU.mole()!=0){
+                std::string mx = multiplier;
+                if(baseU.mole()<0){
+                    mx = "";
+                }            
+                if(baseU.mole()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.mole())+"\" units=\"mole\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"mole\" />");
+                }
+                if(baseU.mole()>0){
+                    multiplier = "";
+                }             
+            }        
+            if(baseU.candela()!=0){
+                std::string mx = multiplier;
+                if(baseU.candela()<0){
+                    mx = "";
+                }            
+                if(baseU.candela()!=1){
+                    unitl.push_back("<unit "+mx+" exponent=\""+std::to_string(baseU.candela())+"\" units=\"candela\" />");
+                }else{
+                    unitl.push_back("<unit "+mx+" units=\"candela\" />");
+                }
+                if(baseU.candela()>0){
+                    multiplier = "";
+                }             
+            } 
         }
-        */
+        std::string uname = unit;
+        bool isStandardUnit=false;
         if(mappedDimensionName.find(unit)==mappedDimensionName.end()){
-            uname = "Dim"+std::to_string(mappedDimensionName.size()+1);
+            std::string llnlname = units::to_string(unitDef);
+            if(llnlname=="V"){
+                uname = "volt";
+                isStandardUnit = true;
+            }else if(llnlname=="A"){
+                uname = "ampere";
+                isStandardUnit = true;
+            }else if(llnlname=="F"){
+                uname = "farad";
+                isStandardUnit = true;
+            }else if(llnlname=="C"){
+                uname = "coulomb";
+                isStandardUnit = true;
+            }else if(llnlname=="C"){
+                uname = "coulomb";
+                isStandardUnit = true;
+            }else if(llnlname=="1/S"){
+                uname = "ohm";
+                isStandardUnit = true;
+            }else if(llnlname=="S"){
+                uname = "siemens";
+                isStandardUnit = true;
+            }else if(llnlname=="K"){
+                uname = "kelvin";
+                isStandardUnit = true;
+            }else if(llnlname=="mol"){
+                uname = "mole";
+                isStandardUnit = true;
+            }else{
+                uname = unit;
+                //Definition does not exist
+                if (existingNames.find(unit) == existingNames.end()) {
+                    //Replace any _, ^
+                    size_t pos = 0;
+                    while((pos = uname.find("/", pos)) != std::string::npos) {
+                        uname.replace(pos, 1, "_per_");
+                        pos += 5;
+                    }
+                    pos = 0;
+                    while((pos = uname.find("^", pos)) != std::string::npos) {
+                        uname.replace(pos, 1, "_pow_");
+                        pos += 5;
+                    }
+                }
+            }
             mappedDimensionName[unit] = uname;
         }else{
             uname = mappedDimensionName[unit];
         }
-        ss<<"<units name=\""<<uname<<"\">"<<std::endl;
-        for(auto c: unitl){
-            ss<<"\t"<<c<<std::endl;
-        }  
-        ss<<"</units>"<<std::endl;
+        if(!isStandardUnit){
+            ss<<"<units name=\""<<uname<<"\">"<<std::endl;
+            for(auto c: unitl){
+                ss<<"\t"<<c<<std::endl;
+            }  
+            ss<<"</units>"<<std::endl;
+        }
         std::string res = ss.str();
         return std::make_tuple(uname,res,unitDef);
     }

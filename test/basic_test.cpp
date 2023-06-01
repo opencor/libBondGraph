@@ -23,6 +23,7 @@ along with this program. If not, see <https://gnu.org/licenses>.
 #include <string>
 #include <tuple>
 #include <vector>
+#include <cstdio>
 
 using namespace BG;
 // Demonstrate some basic assertions.
@@ -35,17 +36,20 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->addComponent(lI);
 
   auto lC1 = createCapacitor();
+  lC1->setParameter("C","1.0","mega Farad");
   ioBondGraph->addComponent(lC1);
 
   // Create the resistor
   auto lR = createResistor();
+  lR->setParameter("R","0.5","micro Ohm");
   ioBondGraph->addComponent(lR);
 
   auto lE = createConstantVoltageSource();
   ioBondGraph->addComponent(lE);
 
   // Create the junctions
-  auto lJ0_1 = createZeroJunction();
+  // auto lJ0_1 = createZeroJunction();
+  auto lJ0_1 = createOneJunction();
   ioBondGraph->addComponent(lJ0_1);
 
   // Create the bonds
@@ -53,6 +57,10 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->connect(lI, lJ0_1);
   ioBondGraph->connect(lC1, lJ0_1);
   ioBondGraph->connect(lE, lJ0_1);
+
+  auto res = ioBondGraph->computeStateEquation();
+  std::cout << " RLC E " << std::endl;
+  ioBondGraph->computePortHamiltonian();
 
   return ioBondGraph;
 }
@@ -83,22 +91,196 @@ RCPLIB::RCP<BondGraphInterface> reaction() {
   ioBondGraph->connect(B, Y_B);
   ioBondGraph->connectInverting(Re, 0, Y_A);
   ioBondGraph->connectInverting(Re, 1, Y_B);
+
+  auto res = ioBondGraph->computeStateEquation();
+  std::cout << " Reaction " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
   return ioBondGraph;
+}
+
+RCPLIB::RCP<BondGraphInterface> phstest() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
+  auto lC2 = createCapacitor();
+  ioBondGraph->addComponent(lC2);
+
+  // Create the Flow source
+  auto lSf = createConstantFlowSource();
+  ioBondGraph->addComponent(lSf);
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create the Transformer
+  auto lTf = createTransformer();
+  ioBondGraph->addComponent(lTf);
+
+  // Create the junctions
+  auto lJ0_1 = createZeroJunction();
+  auto lJ1_1 = createOneJunction();
+  ioBondGraph->addComponent(lJ0_1);
+  ioBondGraph->addComponent(lJ1_1);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ1_1, lR);
+  ioBondGraph->connect(lJ1_1, lC1);
+  ioBondGraph->connect(lJ1_1, lTf);
+
+  ioBondGraph->connect(lTf, 1, lJ0_1);
+  ioBondGraph->connect(lJ0_1, lC2);
+  ioBondGraph->connect(lSf, lJ0_1);
+
+  //std::cout << " PHS " << std::endl;
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
+RCPLIB::RCP<BondGraphInterface> phstestRLC() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
+  auto lL2 = createInductor();
+  ioBondGraph->addComponent(lL2);
+
+  // Create the Flow source
+  auto lSfin = createConstantFlowSource();
+  ioBondGraph->addComponent(lSfin);
+
+  auto lSfout = createConstantFlowSource();
+  ioBondGraph->addComponent(lSfout);  
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create the junctions
+  auto lJ0_1 = createZeroJunction();
+  auto lJ0_3 = createZeroJunction();  
+  auto lJ1_2 = createOneJunction();
+  ioBondGraph->addComponent(lJ0_1);
+  ioBondGraph->addComponent(lJ0_3);
+  ioBondGraph->addComponent(lJ1_2);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ0_1, lC1);
+  ioBondGraph->connect(lJ0_3, lL2);
+  ioBondGraph->connect(lJ1_2, lR);
+
+  ioBondGraph->connect(lSfin,lJ0_1);
+  ioBondGraph->connect(lJ0_3, lSfout);
+
+  ioBondGraph->connect(lJ0_1,lJ1_2);
+  ioBondGraph->connect(lJ1_2,lJ0_3);
+
+  auto res = ioBondGraph->computeStateEquation();
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
+RCPLIB::RCP<BondGraphInterface> phstestHydraulic() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createFluidCompliance();
+  ioBondGraph->addComponent(lC1);
+
+  auto lL2 = createFluidInertance();
+  ioBondGraph->addComponent(lL2);
+
+  // Create the Flow source
+  auto lSfin = createConstantFluidFlowSource();
+  ioBondGraph->addComponent(lSfin);
+
+  auto lSfout = createConstantFluidFlowSource();
+  ioBondGraph->addComponent(lSfout);  
+
+  // Create the resistor
+  auto lR = createViscousResistance();
+  ioBondGraph->addComponent(lR);
+
+  // Create the junctions
+  auto lJ0_1 = createZeroJunction();
+  auto lJ0_3 = createZeroJunction();  
+  auto lJ1_2 = createOneJunction();
+  ioBondGraph->addComponent(lJ0_1);
+  ioBondGraph->addComponent(lJ0_3);
+  ioBondGraph->addComponent(lJ1_2);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ0_1, lC1);
+  ioBondGraph->connect(lJ0_3, lL2);
+  ioBondGraph->connect(lJ1_2, lR);
+
+  ioBondGraph->connect(lSfin,lJ0_1);
+  ioBondGraph->connect(lJ0_3, lSfout);
+
+  ioBondGraph->connect(lJ0_1,lJ1_2);
+  ioBondGraph->connect(lJ1_2,lJ0_3);
+
+  auto res = ioBondGraph->computeStateEquation();
+  ioBondGraph->computePortHamiltonian();
+
+  return ioBondGraph;
+}
+
+TEST(BondGraphSetup, PHS) {
+  newWorkSpace();
+  // Expect two strings not to be equal.
+  auto ioBondGraph = phstestRLC();
+  EXPECT_EQ(ioBondGraph.is_null(), false);
 }
 
 TEST(BondGraphSetup, Electrical) {
   newWorkSpace();
   // Expect two strings not to be equal.
-  auto ioBondGraph = rlc();
+  auto ioBondGraph = phstestRLC();
 
   auto res = ioBondGraph->computeStateEquation();
   // Solvable
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"q_1", "u_3*C_1"},
-      {"dot_Inductor", "u_3"},
-      {"dot_Capacitor", "C_1*dot_u_3"}};
+      {"dot_p_of_Inductor", "q_of_Capacitor/C_0 + r_2*i_4 - r_2*p_of_Inductor/L_1"},
+      {"dot_q_of_Capacitor", "i_3 + i_4 - p_of_Inductor/L_1"}};
+
+  // for (auto eq : equations) {
+  //   std::string svar = symEngineExpressionToString(eq.first);
+  //   std::string sres = symEngineExpressionToString(eq.second);
+  //   std::cout<<svar<<"\t"<<sres<<std::endl;
+  // }
+
+  for (auto eq : equations) {
+    std::string svar = symEngineExpressionToString(eq.first);
+    std::string sres = symEngineExpressionToString(eq.second);
+   
+    std::string expected = result[svar];
+    EXPECT_EQ(sres, expected);
+  }
+}
+
+TEST(BondGraphSetup, Hydraulic) {
+  newWorkSpace();
+  // Expect two strings not to be equal.
+  auto ioBondGraph = phstestHydraulic();
+
+  auto res = ioBondGraph->computeStateEquation();
+  // Solvable
+  EXPECT_EQ(res.bondGraphValidity, true);
+  auto equations = res.dof;
+  std::map<std::string, std::string> result = {
+      {"dot_q_of_FluidCompliance", "i_3 + i_4 - p_of_FluidInertance/L_1"},
+      {"dot_p_of_FluidInertance", "q_of_FluidCompliance/C_0 + r_2*i_4 - r_2*p_of_FluidInertance/L_1"}};
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -117,7 +299,7 @@ TEST(BondGraphSetup, Biochemical) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_Ce", "-Ce*r_2*k_0 + Ce*r_2*k_1"}};
+      {"dot_a_of_Ce", "-r_2*k_0*a_of_Ce + r_2*k_1*a_of_Ce"}};
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -140,7 +322,7 @@ TEST(BondGraphSetup, Composition) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_Ce", "-Ce*r_5*k_2 + Ce*r_5*k_3"},
+      {"dot_a_of_Ce", "-r_5*k_2*a_of_Ce + r_5*k_3*a_of_Ce"},
       {"dot_a_1", "-(-k*a_0*r_5 + k*a_1*r_5)"},
       {"dot_a_2", "-(k*a_2*r_5 - k*a_3*r_5)"},
       {"dot_a_3", "-(-k*a_2*r_5 + k*a_3*r_5)"}};
@@ -164,9 +346,11 @@ TEST(BondGraphSetup, Serialisation) {
 
   auto eqs = bg->computeStateEquation();
   auto files = getCellML("Reaction", bg, eqs);
+  char  fname[256];
+	std::tmpnam(fname);  
   for (const auto &itm : files) {
-    std::string fname = "D:/Temp/" + itm.first;
-    std::ofstream ofs(fname.c_str(), std::ofstream::out);
+    //std::string fname = "D:/Temp/" + itm.first;
+    std::ofstream ofs(fname, std::ofstream::out);
     ofs << itm.second;
     ofs.close();
   }
@@ -206,6 +390,9 @@ TEST(BondGraphSetup, CellML) {
 
   auto eqs = ioBondGraph->computeStateEquation();
   auto files = getCellML("RLC", ioBondGraph, eqs);
+  EXPECT_EQ(true, files.find("RLC.cellml")!=files.end());
+  EXPECT_EQ(true, files.find("RLCParameters.cellml")!=files.end());
+  EXPECT_EQ(true, files.find("Units.cellml")!=files.end());
 }
 
 TEST(BondGraphSetup, SupportedDomains) {

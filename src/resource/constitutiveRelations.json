@@ -1,7 +1,7 @@
 {
   "ElementDefinitions": {
     "Electrical": {
-      "location": 1,
+      "location": 2,
       "Resistance": {
         "description": "Linear Resistor",
         "name": "Resistor",
@@ -109,8 +109,226 @@
         "flow": "A"
       }
     },
-    "Biochemical": {
+    "Mechanical": {
+      "location": 4,
+      "Resistance": {
+        "description": "Linear damping",
+        "name": "LinearDamper",
+        "shortname": "R",
+        "variableprefix": "R",
+        "class": "passive",
+        "parameters": {
+          "r": {
+            "description": "Damping",
+            "dimension": "N*s/m",
+            "universalConstant": false,
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 - f_0*r"
+        ]
+      },
+      "Capacitance": {
+        "description": "Linear Elastic Spring",
+        "name": "LinearSpring",
+        "shortname": "k",
+        "variableprefix": "k",
+        "class": "passive",
+        "parameters": {
+          "k": {
+            "description": "Stiffness",
+            "dimension": "N/m",
+            "value": 1
+          }
+        },
+        "states": {
+          "x_0": {
+            "description": "Displacement",
+            "dimension": "m",
+            "value": 0
+          }
+        },
+        "constitutive_relations": [
+          "x_0 - k * e_0",
+          "dot_x_0 - f_0"
+        ]
+      },
+      "Inductance": {
+        "description": "Mass",
+        "name": "Mass",
+        "shortname": "I",
+        "variableprefix": "I",
+        "class": "passive",
+        "states": {
+          "p_0": {
+            "description": "Linear Momentum",
+            "dimension": "kg*m/s",
+            "value": 0
+          }
+        },
+        "parameters": {
+          "m": {
+            "description": "Mass",
+            "dimension": "kg",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "p_0 - I*f_0",
+          "dot_p_0 - e_0"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantForce",
+        "description": "Constant Point Force",
+        "shortname": "F",
+        "variableprefix": "F",
+        "class": "passive",
+        "parameters": {
+          "f": {
+            "description": "force",
+            "dimension": "N",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -f"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantVelocity",
+        "description": "Constant Linear Velocity",
+        "shortname": "v",
+        "variableprefix": "v",
+        "class": "passive",
+        "parameters": {
+          "v": {
+            "description": "Velocity",
+            "dimension": "m/s",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+v"
+        ]
+      },
+      "BondDimensions": {
+        "effort": "N",
+        "flow": "m/s"
+      }
+    },
+    "Hydraulic": {
       "location": 2,
+      "Resistance": {
+        "description": "Viscous Resistance",
+        "name": "ViscousResistance",
+        "shortname": "R",
+        "variableprefix": "R",
+        "class": "passive",
+        "parameters": {
+          "r": {
+            "description": "Resistance",
+            "dimension": "J*s/m^6",
+            "universalConstant": false,
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 - f_0*r"
+        ]
+      },
+      "Capacitance": {
+        "description": "Vessal wall compliance",
+        "name": "FluidCompliance",
+        "shortname": "C",
+        "variableprefix": "C",
+        "class": "passive",
+        "parameters": {
+          "C": {
+            "description": "Compliance",
+            "dimension": "m^6/J",
+            "value": 1
+          }
+        },
+        "states": {
+          "q_0": {
+            "description": "Liquid volume",
+            "dimension": "m^3",
+            "value": 0
+          }
+        },
+        "constitutive_relations": [
+          "q_0 - C * e_0",
+          "dot_q_0 - f_0"
+        ]
+      },
+      "Inductance": {
+        "description": "Fluid Inertia",
+        "name": "FluidInertance",
+        "shortname": "I",
+        "variableprefix": "I",
+        "class": "passive",
+        "states": {
+          "p_0": {
+            "description": "Fluid momentum",
+            "dimension": "J*s/m^3",
+            "value": 0
+          }
+        },
+        "parameters": {
+          "L": {
+            "description": "Inertance",
+            "dimension": "J*s^2/m^6",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "p_0 - L*f_0",
+          "dot_p_0 - e_0"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantPressureSource",
+        "description": "Constant Pressure Source",
+        "shortname": "Se",
+        "variableprefix": "Se",
+        "class": "passive",
+        "parameters": {
+          "u": {
+            "description": "Pressure",
+            "dimension": "J/m^3",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -u"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantFluidFlowSource",
+        "description": "Constant Fluid Flow Source",
+        "shortname": "Sf",
+        "variableprefix": "Sf",
+        "class": "passive",
+        "parameters": {
+          "nu": {
+            "description": "Flow rate",
+            "dimension": "m^3/s",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+nu"
+        ]
+      },
+      "BondDimensions": {
+        "effort": "J/m^3",
+        "flow": "m^3/s"
+      }
+    },
+    "Biochemical": {
+      "location": 3,
       "Reaction": {
         "name": "Reaction",
         "description": "Biochemical Reaction",
@@ -239,7 +457,7 @@
       }
     },
     "Generic": {
-      "location": 3,
+      "location": 1,
       "Transformer": {
         "name": "Transformer",
         "description": "Linear Transformer",
@@ -386,7 +604,7 @@
       }
     },
     "Composition": {
-      "location": 4,
+      "location": 6,
       "CellML": {
         "name": "cellml",
         "description": "CellML blackbox",
@@ -399,7 +617,7 @@
       }
     },
     "Annotation": {
-      "location": 5,
+      "location": 7,
       "Region": {
         "name": "region",
         "description": "Spatial Annotation",

@@ -34,97 +34,74 @@ set(BG_BOOSTMP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/boostmp_1_77")
 # Link with Symengine
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/symengine")
 
-# Link with LLNL units
-set(UNITS_INSTALL OFF CACHE INTERNAL "")
-set(UNITS_BUILD_OBJECT_LIBRARY ON CACHE INTERNAL "")
-set(UNITS_BUILD_STATIC_LIBRARY OFF CACHE INTERNAL "")
-set(UNITS_BUILD_SHARED_LIBRARY OFF CACHE INTERNAL "")
-set(UNITS_BUILD_WEBSERVER OFF CACHE INTERNAL "")
+#Eigen library for Port Hamiltonian computation
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/eigen/")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/units")
+# Link with LLNL units for normal build, use patched version for webassembly
+if(NOT EMSCRIPTEN)
+  
+  set(UNITS_INSTALL OFF CACHE INTERNAL "")
+  set(UNITS_BUILD_OBJECT_LIBRARY ON CACHE INTERNAL "")
+  set(UNITS_BUILD_STATIC_LIBRARY OFF CACHE INTERNAL "")
+  set(UNITS_BUILD_SHARED_LIBRARY OFF CACHE INTERNAL "")
+  set(UNITS_BUILD_WEBSERVER OFF CACHE INTERNAL "")
+  add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/units")
 
-# hide units variables
-set(UNITS_HEADER_ONLY OFF CACHE INTERNAL "hide this!" FORCE)
-set(UNITS_BUILD_OBJECT_LIBRARY ${UNITS_BUILD_OBJECT_LIBRARY} CACHE INTERNAL "hide this!" FORCE)
-set(UNITS_NAMESPACE ${UNITS_NAMESPACE} CACHE INTERNAL "hide this!" FORCE)
+  # hide units variables
+  set(UNITS_HEADER_ONLY OFF CACHE INTERNAL "hide this!" FORCE)
+  set(UNITS_BUILD_OBJECT_LIBRARY ${UNITS_BUILD_OBJECT_LIBRARY} CACHE INTERNAL "hide this!" FORCE)
+  set(UNITS_NAMESPACE ${UNITS_NAMESPACE} CACHE INTERNAL "hide this!" FORCE)
 
-# Hide splog variables
-set(BUILD_TESTS OFF CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(BUILD_TESTS)
-set(SPDLOG_BUILD_ALL ${SPDLOG_BUILD_ALL} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_ALL)
-set(SPDLOG_BUILD_BENCH ${SPDLOG_BUILD_BENCH} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_BENCH)
-set(SPDLOG_BUILD_EXAMPLE_HO ${SPDLOG_BUILD_EXAMPLE_HO} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_EXAMPLE_HO)
-set(SPDLOG_BUILD_SHARED OFF CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_SHARED)
-set(SPDLOG_BUILD_TESTS ${SPDLOG_BUILD_TESTS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_TESTS)
-set(SPDLOG_BUILD_TESTS_HO ${SPDLOG_BUILD_TESTS_HO} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_TESTS_HO)
-set(SPDLOG_BUILD_WARNINGS ${SPDLOG_BUILD_WARNINGS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_WARNINGS)
-set(SPDLOG_CLOCK_COARSE ${SPDLOG_CLOCK_COARSE} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_CLOCK_COARSE)
-set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_DISABLE_DEFAULT_LOGGER)
-set(SPDLOG_ENABLE_PCH ${SPDLOG_ENABLE_PCH} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_ENABLE_PCH)
-set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_DISABLE_DEFAULT_LOGGER)
-set(SPDLOG_FMT_EXTERNAL ${SPDLOG_FMT_EXTERNAL} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_FMT_EXTERNAL)
-set(SPDLOG_FMT_EXTERNAL_HO ${SPDLOG_FMT_EXTERNAL_HO} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_FMT_EXTERNAL_HO)
-set(SPDLOG_INSTALL ${SPDLOG_INSTALL} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_INSTALL)
-set(SPDLOG_NO_ATOMIC_LEVELS ${SPDLOG_NO_ATOMIC_LEVELS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_NO_ATOMIC_LEVELS)
-set(SPDLOG_NO_EXCEPTIONS ${SPDLOG_NO_EXCEPTIONS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_NO_EXCEPTIONS)
-set(SPDLOG_NO_THREAD_ID ${SPDLOG_NO_THREAD_ID} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_NO_THREAD_ID)
-set(SPDLOG_NO_TLS ${SPDLOG_NO_TLS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_NO_TLS)
-set(SPDLOG_PREVENT_CHILD_FD ${SPDLOG_PREVENT_CHILD_FD} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_PREVENT_CHILD_FD)
-set(SPDLOG_TIDY ${SPDLOG_TIDY} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_TIDY)
-set(SPDLOG_SANITIZE_ADDRESS ${SPDLOG_SANITIZE_ADDRESS} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_SANITIZE_ADDRESS)
-set(SPDLOG_LEVEL_NAME_TRACE ${SPDLOG_LEVEL_NAME_TRACE} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_TRACE)
-set(SPDLOG_LEVEL_NAME_OFF ${SPDLOG_LEVEL_NAME_OFF} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_OFF)
-set(SPDLOG_LEVEL_NAME_ERROR ${SPDLOG_LEVEL_NAME_ERROR} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_ERROR)
-set(SPDLOG_LEVEL_NAME_CRITICAL ${SPDLOG_LEVEL_NAME_CRITICAL} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_CRITICAL)
-set(SPDLOG_LEVEL_NAME_DEBUG ${SPDLOG_LEVEL_NAME_DEBUG} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_DEBUG)
-set(SPDLOG_LEVEL_NAME_INFO ${SPDLOG_LEVEL_NAME_INFO} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_INFO)
-set(SPDLOG_LEVEL_NAME_WARNING ${SPDLOG_LEVEL_NAME_WARNING} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_LEVEL_NAME_WARNING)
-set(SPDLOG_BUILD_EXAMPLE ${SPDLOG_BUILD_EXAMPLE} CACHE INTERNAL "hide this!" FORCE)
-mark_as_advanced(SPDLOG_BUILD_EXAMPLE)
 
-if(BUILD_TESTING)
-  # Setup google test
-  include(FetchContent)
-  FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-  )
+  # Hide splog variables
+  set(BUILD_TESTS OFF CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_ALL ${SPDLOG_BUILD_ALL} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_BENCH ${SPDLOG_BUILD_BENCH} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_EXAMPLE_HO ${SPDLOG_BUILD_EXAMPLE_HO} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_SHARED OFF CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_TESTS ${SPDLOG_BUILD_TESTS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_TESTS_HO ${SPDLOG_BUILD_TESTS_HO} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_WARNINGS ${SPDLOG_BUILD_WARNINGS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_CLOCK_COARSE ${SPDLOG_CLOCK_COARSE} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_ENABLE_PCH ${SPDLOG_ENABLE_PCH} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_DISABLE_DEFAULT_LOGGER ${SPDLOG_DISABLE_DEFAULT_LOGGER} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_FMT_EXTERNAL ${SPDLOG_FMT_EXTERNAL} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_FMT_EXTERNAL_HO ${SPDLOG_FMT_EXTERNAL_HO} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_INSTALL ${SPDLOG_INSTALL} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_NO_ATOMIC_LEVELS ${SPDLOG_NO_ATOMIC_LEVELS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_NO_EXCEPTIONS ${SPDLOG_NO_EXCEPTIONS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_NO_THREAD_ID ${SPDLOG_NO_THREAD_ID} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_NO_TLS ${SPDLOG_NO_TLS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_PREVENT_CHILD_FD ${SPDLOG_PREVENT_CHILD_FD} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_TIDY ${SPDLOG_TIDY} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_SANITIZE_ADDRESS ${SPDLOG_SANITIZE_ADDRESS} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_TRACE ${SPDLOG_LEVEL_NAME_TRACE} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_OFF ${SPDLOG_LEVEL_NAME_OFF} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_ERROR ${SPDLOG_LEVEL_NAME_ERROR} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_CRITICAL ${SPDLOG_LEVEL_NAME_CRITICAL} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_DEBUG ${SPDLOG_LEVEL_NAME_DEBUG} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_INFO ${SPDLOG_LEVEL_NAME_INFO} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_LEVEL_NAME_WARNING ${SPDLOG_LEVEL_NAME_WARNING} CACHE INTERNAL "hide this!" FORCE)
+  set(SPDLOG_BUILD_EXAMPLE ${SPDLOG_BUILD_EXAMPLE} CACHE INTERNAL "hide this!" FORCE)
 
-  # For Windows: Prevent overriding the parent project's compiler/linker settings
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  if(BUILD_TESTING)
+    # Setup google test
+    include(FetchContent)
+    FetchContent_Declare(
+      googletest
+      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+    )
 
-  # So that GoogleTest does not get installed with this project
-  option(INSTALL_GTEST "Enable installation of googletest." OFF)
-  FetchContent_MakeAvailable(googletest)
-endif()
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+    # So that GoogleTest does not get installed with this project
+    option(INSTALL_GTEST "Enable installation of googletest." OFF)
+    FetchContent_MakeAvailable(googletest)
+  endif()
+
+endif(NOT EMSCRIPTEN)
 
 # Load the Units.cellml file into library
 include(cmake/vtkEncodeString.cmake)
@@ -170,40 +147,11 @@ set(SRC
   ${ELEMENTMETADATAJSONSOURCE}
 )
 
-include(GNUInstallDirs)
+
 
 # Generate a bondgraph library
 if(WIN32)
   add_definitions(-DWIN_EXPORT)
-endif()
-
-add_library(${PROJECT_NAME} SHARED ${SRC})
-set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/units/units)
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/)
-include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
-
-target_include_directories(${PROJECT_NAME}
-  PRIVATE
-  ${CMAKE_BINARY_DIR}
-  ${BG_BOOSTMP_INCLUDE_DIR}
-)
-
-target_link_libraries(${PROJECT_NAME} PUBLIC symengine units-object)
-
-set_property(TARGET ${PROJECT_NAME} PROPERTY VERSION ${_PROJECT_VERSION})
-set_property(TARGET ${PROJECT_NAME} PROPERTY SOVERSION 1)
-set_property(TARGET ${PROJECT_NAME} PROPERTY
-  "INTERFACE_${PROJECT_NAME}_MAJOR_VERSION" 1)
-set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
-  COMPATIBLE_INTERFACE_STRING "${PROJECT_NAME}_MAJOR_VERSION"
-)
-
-if(ENABLE_LOGGING)
-  # Link with spdlog
-  add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/spdlog")
-  target_link_libraries(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:spdlog::spdlog_header_only>")
-  add_definitions(-DENABLE_LOGGING)
 endif()
 
 if(PARSE_AND_CREATE_FACTORY_METHODS)
@@ -215,73 +163,161 @@ if(PARSE_AND_CREATE_FACTORY_METHODS)
     COMMENT "Generating Domain specific factory methods for bg components"
   )
 
-  add_dependencies(${PROJECT_NAME} factorymethods)
+  #add_dependencies(${PROJECT_NAME} factorymethods)
 endif()
 
-if(BUILD_TESTING)
-  enable_testing()
-  add_subdirectory(test)
-endif()
+if(NOT EMSCRIPTEN)
+  include(GNUInstallDirs)
+  if(MSVC)
+    # Required for PHS build as the size of the obj file is large resulting in C1128
+    add_compile_options("/bigobj")
+  endif()
 
-install(TARGETS ${PROJECT_NAME}
-  EXPORT BondGraphTargets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
+  add_library(${PROJECT_NAME} SHARED ${SRC})
+  set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/units/units)
+  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/)
+  include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
 
-set(BondGraph_HEADERS
-  src/Teuchos_DLLExportMacro.h
-  src/Teuchos_any.hpp
-  src/Teuchos_Assert.hpp
-  src/Teuchos_ConfigDefs.hpp
-  src/Teuchos_ConstTypeTraits.hpp
-  src/Teuchos_dyn_cast.hpp
-  src/Teuchos_ENull.hpp
-  src/Teuchos_Exceptions.hpp
-  src/Teuchos_getBaseObjVoidPtr.hpp
-  src/Teuchos_map.hpp
-  src/Teuchos_NullIteratorTraits.hpp
-  src/Teuchos_Ptr.hpp
-  src/Teuchos_PtrDecl.hpp
-  src/Teuchos_RCP.hpp
-  src/Teuchos_RCPDecl.hpp
-  src/Teuchos_RCPNode.hpp
-  src/Teuchos_stacktrace.hpp
-  src/Teuchos_TestForException.hpp
-  src/Teuchos_toString.hpp
-  src/Teuchos_TypeNameTraits.hpp
-  src/Teuchos_RCP.hpp
-  ${CMAKE_BINARY_DIR}/Teuchos_config.h
-  src/bondgraph.hpp
-  src/export.h
-  src/RCP.h
-  src/factorymethods.h
-)
+  if(PARSE_AND_CREATE_FACTORY_METHODS)
+    add_dependencies(${PROJECT_NAME} factorymethods)
+  endif()
 
-install(FILES ${BondGraph_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Headers)
-install(FILES src/thirdparty/json.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty)
+  target_include_directories(${PROJECT_NAME}
+    PRIVATE
+    ${CMAKE_CURRENT_BUILD_DIR}
+    ${BG_BOOSTMP_INCLUDE_DIR}
+    ${EIGEN_INCLUDE_DIR}
+  )
 
-install(EXPORT BondGraphTargets
-  FILE BondGraphTargets.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-)
-include(CMakePackageConfigHelpers)
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfig.cmake"
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-)
+  add_executable(
+    phstest
+    phstest.cpp
+  )
 
-# generate the version file for the config file
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfigVersion.cmake"
-  VERSION "${_PROJECT_VERSION}"
-  COMPATIBILITY AnyNewerVersion
-)
+  target_link_libraries(phstest
+    teuchos
+    symengine
+    units-object
+    ${PROJECT_NAME}
+  )
 
-install(FILES
-  "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfig.cmake"
-  "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfigVersion.cmake"
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-)
+  target_link_libraries(${PROJECT_NAME} PRIVATE teuchos symengine units-object)
+
+  set_property(TARGET ${PROJECT_NAME} PROPERTY VERSION ${_PROJECT_VERSION})
+  set_property(TARGET ${PROJECT_NAME} PROPERTY SOVERSION 1)
+  set_property(TARGET ${PROJECT_NAME} PROPERTY
+    "INTERFACE_${PROJECT_NAME}_MAJOR_VERSION" 1)
+  set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
+    COMPATIBLE_INTERFACE_STRING "${PROJECT_NAME}_MAJOR_VERSION"
+  )
+
+  if(ENABLE_LOGGING)
+    # Link with spdlog
+    add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/spdlog")
+    target_link_libraries(${PROJECT_NAME} PRIVATE "$<BUILD_INTERFACE:spdlog::spdlog_header_only>")
+    add_definitions(-DENABLE_LOGGING)
+  endif()
+
+  if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+  endif()
+
+  install(TARGETS ${PROJECT_NAME}
+    EXPORT BondGraphTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  set(BondGraph_HEADERS
+    src/bondgraph.hpp
+    src/export.h
+    src/RCP.h
+    src/factorymethods.h
+  )
+
+  install(FILES ${BondGraph_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT Headers)
+  install(FILES src/thirdparty/json.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/thirdparty)
+
+  install(EXPORT BondGraphTargets
+    FILE BondGraphTargets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+  )
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+  )
+
+  # generate the version file for the config file
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfigVersion.cmake"
+    VERSION "${_PROJECT_VERSION}"
+    COMPATIBILITY AnyNewerVersion
+  )
+
+  install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/BondGraphConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+  )
+else(NOT EMSCRIPTEN)
+#https://gist.github.com/WesThorburn/00c47b267a0e8c8431e06b14997778e4
+#emcmake cmake ..  -DCMAKE_INSTALL_PREFIX=`pwd`/install
+#emmake make
+  message(STATUS "Building WASM library.")
+  message(STATUS "Run emmake make to build the assembly!")
+
+  set(units_source_files 
+    #${PROJECT_SOURCE_DIR}/src/unitproxy/unitconv.cpp 
+    ${PROJECT_SOURCE_DIR}/src/unitproxy/units.cpp 
+    ${PROJECT_SOURCE_DIR}/src/unitproxy/r20_conv.cpp 
+    ${PROJECT_SOURCE_DIR}/src/unitproxy/x12_conv.cpp 
+    ${PROJECT_SOURCE_DIR}/src/unitproxy/commodities.cpp 
+  )
+
+  add_library(${PROJECT_NAME}_WASM_LIB STATIC 
+              ${units_source_files}
+              ${SRC})
+
+  set_property(TARGET ${PROJECT_NAME}_WASM_LIB PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+  include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src/unitproxy/)
+  include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/src/thirdparty/)
+  include_directories(BEFORE ${CMAKE_CURRENT_BINARY_DIR}/src/thirdparty/)
+
+  if(PARSE_AND_CREATE_FACTORY_METHODS)
+    add_dependencies(${PROJECT_NAME}_WASM_LIB factorymethods)
+  endif()
+
+
+  target_include_directories(${PROJECT_NAME}_WASM_LIB
+    PRIVATE
+    ${CMAKE_CURRENT_BUILD_DIR}
+    ${BG_BOOSTMP_INCLUDE_DIR}
+    ${EIGEN_INCLUDE_DIR}
+  )
+
+  target_link_libraries(${PROJECT_NAME}_WASM_LIB PRIVATE teuchos symengine)
+
+
+  add_executable(${PROJECT_NAME}_WASM 
+               src/wasm.cpp
+               )
+  
+  set(CMAKE_EXECUTABLE_SUFFIX ".js")
+  #set_target_properties(${PROJECT_NAME}_WASM PROPERTIES LINK_FLAGS "--no-entry -fsanitize=undefined -sWASM -sALLOW_MEMORY_GROWTH -sNO_DISABLE_EXCEPTION_CATCHING -sMODULARIZE --bind -s EXPORT_NAME='createLibBondGraph'")
+  set_target_properties(${PROJECT_NAME}_WASM PROPERTIES LINK_FLAGS "--no-entry -fsanitize=undefined -sWASM -sALLOW_MEMORY_GROWTH -sNO_DISABLE_EXCEPTION_CATCHING --bind")
+  target_include_directories(${PROJECT_NAME}_WASM
+    PRIVATE
+    ${CMAKE_CURRENT_BUILD_DIR}
+    ${BG_BOOSTMP_INCLUDE_DIR}
+    ${EIGEN_INCLUDE_DIR}
+  )
+
+  target_link_libraries(${PROJECT_NAME}_WASM ${PROJECT_NAME}_WASM_LIB)
+
+endif(NOT EMSCRIPTEN)

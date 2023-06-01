@@ -65,3 +65,17 @@ The library depends on the following packages/libraries
 
 ## Language
 C++ 11
+
+## Developer Notes
+### MSVC option
+Using the Eigen library with SymEngine to calaculate Port Hamiltonian representation of the bondgraph results in a large library. MSVC requires /bigobj compile option ( else C1128 is thrown. )
+
+### WebAssembly via emscripten
+The LLNL/units library causes 'memory out of bounds' issue when built with string handling functions (to_string, unit_from_string). This was due to the very large `base_unit_names` map in units.cpp. This is addressed by removing the definitions associated with the following terms
+"::us" | "::nautical" | "::imp" | "::chinese" | "::currency" | "::acre" | "::apothecaries"| "::cup" | "::typographic"| "::laboratory" | "::log" | "::clinical" | "::ft" | "::textile" | "::gal" | "::btu*" | "pound*" | "::troy" | "::oz" | "::av" | "::gold"
+
+A file named `base_units.txt` in the src/unit_proxy directory has been created with the original list of base unit definitions, along with the grep command to generate the shortened list. 
+
+This does not impact biophyical bondgraph definitions, and the use of SI units. The non webassembly library does include all definitions.
+
+A file named `index.html` in src directory is provided for testing, the file along with `BondGraph_WASM.js` and `BondGraph_WASM.wasm` should be made available for loading in a browser.

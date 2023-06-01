@@ -57,6 +57,7 @@ protected:
     std::vector<RCPLIB::RCP<Value>> &mParameter; //!Array of state and parameter values associated with this bondgraph element
     RCPLIB::RCP<BGElement>  rcpPtr; //RCP pointer for this
     size_t dofID = 0; //! Dof id  for the element
+    nlohmann::json annotation; //!PMR Annotation associated with the element
     //Map of physical domains
     DEFINE_PHYSICAL_DOMAINS
     BondGraphElementBase(RCPLIB::RCP<BGElementData> data, std::string inId = "-1");
@@ -70,6 +71,8 @@ public:
      const std::string &getName() const;
     //! Set element name
      void setName(const std::string &name);
+    //! Get variable name for this element
+    std::string getVariableName();
     //! Set if instance is a proxy
     void setProxy(bool flag);
     //! Check if this is a proxy instance
@@ -99,9 +102,9 @@ public:
     //! Set portModified
     void setPortModified(bool flag = true);
     //! Return the ports associated to the component.
-     std::vector<RCPLIB::RCP<PortInterface>> &getPorts();
+    std::vector<RCPLIB::RCP<PortInterface>> &getPorts();
     //! Return port at pin i
-     RCPLIB::RCP<PortInterface> &getPorts(unsigned int i);
+    RCPLIB::RCP<PortInterface> &getPorts(unsigned int i);
     //! Connect the component of a port
     virtual void connect(const RCPLIB::RCP<PortInterface> &inPort, int portNum=0) = 0;
     //! Connect the compomemy to inPort and disconnect it from outPort
@@ -117,15 +120,15 @@ public:
     //! Get constitutive equations index
     int getConstitutiveEqIndex(int eqNo = 0);
     //! Get constitutive equations
-     virtual std::vector<std::string> &getConstitutiveEquations();
+    virtual std::vector<std::string> &getConstitutiveEquations();
     //! Set physical dimension units, only supported for port Hamiltonian types, Transformers and Gyrators
     virtual void setSIUnit(std::string name, std::string unit);
     //! Set parameter
     template<typename T>
-     RCPLIB::RCP<Value> setParameter(std::string name, T value, std::string unit);
+    RCPLIB::RCP<Value> setParameter(std::string name, T value, std::string unit);
     //! Set value
     template<typename T>
-     RCPLIB::RCP<Value> setValue(std::string name, T value);
+    RCPLIB::RCP<Value> setValue(std::string name, T value);
     //! Set parameter
      virtual RCPLIB::RCP<Value> setParameter(std::string name, std::string value, std::string unit);
     //! Set value
@@ -138,6 +141,11 @@ public:
      virtual std::vector<std::tuple<std::string, RCPLIB::RCP<Value>>> values();
     //! Update parameter name
     virtual bool updateParameterName(std::string current,std::string target);
+    //! Set the PMR annotation
+    virtual void setPMRAnnotation(nlohmann::json& annotation);
+    //! Get the PMR annotation
+    virtual nlohmann::json& getPMRAnnotation();
+
     friend  RCPLIB::RCP<BGElement>  createProxy(const RCPLIB::RCP<BGElement>  &obj);
     friend  RCPLIB::RCP<BGElement>  createClone(const RCPLIB::RCP<BGElement>  &obj);
     friend RCPLIB::RCP<BGElement>  loadJson(const nlohmann::json &j, const RCPLIB::RCP<BGElementData> &data);

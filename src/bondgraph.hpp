@@ -17,15 +17,6 @@ along with this program. If not, see <https://gnu.org/licenses>.
 
 *******************************************************************************/
 #pragma once
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wreserved-id-macro"
-#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
-#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
-#endif
-
 #include "RCP.h"
 #include "export.h"
 #include "thirdparty/json.hpp"
@@ -85,6 +76,7 @@ enum EXPORTED PassiveType {
   bConcentration,   //!< A Chemical concentration
   bChemostat,       //!< A Chemical chemostat
   bFlowstat,        //!< A Chemical fluxstat
+  bStoichiometry,   //!< A Chemical transformer element
   eZero,            //!< O-junction
   eOne,             //!< 1-junction
   ePortHamiltonian, //!< PortInterface hamiltonian type
@@ -123,7 +115,7 @@ public:
   // Set weight
   virtual void setWeight(double wt) = 0;
   //! Get weight
-  virtual double getWeight() const = 0;
+  virtual const double getWeight() const = 0;
 };
 
 class EXPORTED BondInterface {
@@ -256,6 +248,10 @@ public:
   setUniversalConstant(std::string name, double &value, std::string unit) = 0;
   //! Get the values associated with the element
   virtual std::vector<std::tuple<std::string, RCPLIB::RCP<Value>>> values() = 0;
+  //! Set the PMR annotation
+  virtual void setPMRAnnotation(nlohmann::json& annotation) = 0;
+  //! Get the PMR annotation
+  virtual nlohmann::json& getPMRAnnotation() = 0;  
 };
 
 class EXPORTED ComputeEquationResults {
@@ -285,6 +281,8 @@ public:
   // parameter (p)
   std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
       physicalDimensions;
+  //Annotations associated with each model variable - the relationship information is available in the json
+  std::unordered_map<std::string,std::vector<nlohmann::json>> annotations;
 };
 
 class EXPORTED BondGraphInterface {
@@ -451,6 +449,12 @@ public:
    * @return instance of ComputeEquationResults
    */
   virtual ComputeEquationResults computeStateEquation() = 0;
+
+  /**
+   * @brief Compute the Port Hamiltonian of the bondgraph
+   */
+  virtual nlohmann::json computePortHamiltonian() = 0;
+
   /**
    * @brief Get the Components object
    * Returns a tuple with readablename (if not available the id), handle to it
