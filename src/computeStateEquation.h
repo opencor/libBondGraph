@@ -547,7 +547,6 @@ ComputeEquationResults BondGraph::computeStateEquation() {
 
 #endif
   // Optimise findSubstitutions for speed
-
   auto snf = getSmithNormalForm(linOp, nonlinearTerms);
   // Add constraints from Port Hamiltionians
   for (auto &mc_ : connectedComponents) {

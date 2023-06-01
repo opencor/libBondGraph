@@ -284,7 +284,7 @@ RCPLIB::RCP<BGElement> createViscousResistance(const RCPLIB::RCP< BGElementData 
     ptr->setDomain("Hydraulic");
     RCPLIB::RCP<Value> parameter0 = RCPLIB::rcp(new Value("r", "1"));
     ptr->mParameter.push_back(parameter0);
-    parameter0->units = units::to_string(units::unit_from_string("J*s/m^6 "));
+    parameter0->units = units::to_string(units::unit_from_string("J*s/m^6"));
     ptr->constitutiveEq.push_back("e_0 - f_0*r");
     ptr->constitutiveEqIndex.push_back(-1);  
     ptr->setName("ViscousResistance");
@@ -293,24 +293,24 @@ RCPLIB::RCP<BGElement> createViscousResistance(const RCPLIB::RCP< BGElementData 
 
         
 /**
-* @brief Create a PotentialSource instance, Constant Fluid Pressure
+* @brief Create a PotentialSource instance, Constant Pressure Source
 * Physical domain Hydraulic
 * @return Reference counted pointer to the element 
 */
-RCPLIB::RCP<BGElement> createConstantFluidPressureSource(const RCPLIB::RCP< BGElementData > &proxy){
+RCPLIB::RCP<BGElement> createConstantPressureSource(const RCPLIB::RCP< BGElementData > &proxy){
     auto ptr_ = createPotentialSource(proxy);
     RCPLIB::RCP<PotentialSource> ptr = RCPLIB::rcp_dynamic_cast<PotentialSource>(ptr_);
     ptr->setDomain("Hydraulic");
-    ptr->mParameter[0]->name = "p";
+    ptr->mParameter[0]->name = "u";
     ptr->mParameter[0]->value = "1";
     ptr->mParameter[0]->units = units::to_string(units::unit_from_string("J/m^3"));
-    ptr->setName("ConstantFluidPressureSource");
+    ptr->setName("ConstantPressureSource");
     return ptr;    
 }  
 
         
 /**
-* @brief Create a FlowSource instance, Constant Fluid Flow
+* @brief Create a FlowSource instance, Constant Fluid Flow Source
 * Physical domain Hydraulic
 * @return Reference counted pointer to the element 
 */
@@ -318,7 +318,7 @@ RCPLIB::RCP<BGElement> createConstantFluidFlowSource(const RCPLIB::RCP< BGElemen
     auto ptr_ = createFlowSource(proxy);
     RCPLIB::RCP<FlowSource> ptr = RCPLIB::rcp_dynamic_cast<FlowSource>(ptr_);
     ptr->setDomain("Hydraulic");
-    ptr->mParameter[0]->name = "q";
+    ptr->mParameter[0]->name = "nu";
     ptr->mParameter[0]->value = "1";
     ptr->mParameter[0]->units = units::to_string(units::unit_from_string("m^3/s"));
     ptr->setName("ConstantFluidFlowSource");

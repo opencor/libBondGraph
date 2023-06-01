@@ -50,7 +50,7 @@ nlohmann::json getSupportedPhysicalDomainsAndFactoryMethods() {
 	mtsHydraulic["Capacitance"]="createFluidCompliance";
 	mtsHydraulic["Inductance"]="createFluidInertance";
 	mtsHydraulic["Resistance"]="createViscousResistance";
-	mtsHydraulic["PotentialSource"]="createConstantFluidPressureSource";
+	mtsHydraulic["PotentialSource"]="createConstantPressureSource";
 	mtsHydraulic["FlowSource"]="createConstantFluidFlowSource";
 	result["Hydraulic"] = mtsHydraulic;
 	

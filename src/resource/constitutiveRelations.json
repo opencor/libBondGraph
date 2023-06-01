@@ -219,7 +219,7 @@
       }
     },
     "Hydraulic": {
-      "location": 5,
+      "location": 2,
       "Resistance": {
         "description": "Viscous Resistance",
         "name": "ViscousResistance",
@@ -229,7 +229,7 @@
         "parameters": {
           "r": {
             "description": "Resistance",
-            "dimension": "J*s/m^6 ",
+            "dimension": "J*s/m^6",
             "universalConstant": false,
             "value": 1
           }
@@ -289,37 +289,37 @@
         ]
       },
       "PotentialSource": {
-        "name": "ConstantFluidPressureSource",
-        "description": "Constant Fluid Pressure",
-        "shortname": "P",
-        "variableprefix": "P",
+        "name": "ConstantPressureSource",
+        "description": "Constant Pressure Source",
+        "shortname": "Se",
+        "variableprefix": "Se",
         "class": "passive",
         "parameters": {
-          "p": {
+          "u": {
             "description": "Pressure",
             "dimension": "J/m^3",
             "value": 1
           }
         },
         "constitutive_relations": [
-          "e_0 -p"
+          "e_0 -u"
         ]
       },
       "FlowSource": {
         "name": "ConstantFluidFlowSource",
-        "description": "Constant Fluid Flow",
-        "shortname": "nu",
-        "variableprefix": "nu",
+        "description": "Constant Fluid Flow Source",
+        "shortname": "Sf",
+        "variableprefix": "Sf",
         "class": "passive",
         "parameters": {
-          "q": {
+          "nu": {
             "description": "Flow rate",
             "dimension": "m^3/s",
             "value": 1
           }
         },
         "constitutive_relations": [
-          "f_0+q"
+          "f_0+nu"
         ]
       },
       "BondDimensions": {

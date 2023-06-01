@@ -122,15 +122,15 @@ EXPORTED RCPLIB::RCP<BGElement> createViscousResistance(const RCPLIB::RCP< BGEle
 
         
 /**
-* @brief Create a PotentialSource instance, Constant Fluid Pressure
+* @brief Create a PotentialSource instance, Constant Pressure Source
 * Physical domain Hydraulic
 * @return Reference counted pointer to the element 
 */
-EXPORTED RCPLIB::RCP<BGElement> createConstantFluidPressureSource(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
+EXPORTED RCPLIB::RCP<BGElement> createConstantPressureSource(const RCPLIB::RCP< BGElementData > &proxy=RCPLIB::null);
 
         
 /**
-* @brief Create a FlowSource instance, Constant Fluid Flow
+* @brief Create a FlowSource instance, Constant Fluid Flow Source
 * Physical domain Hydraulic
 * @return Reference counted pointer to the element 
 */

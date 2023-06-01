@@ -251,13 +251,19 @@ TEST(BondGraphSetup, Electrical) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_Inductor", "Capacitor/C_0 + r_2*i_4 - r_2*Inductor/L_1"},
-      {"dot_Capacitor", "i_3 + i_4 - Inductor/L_1"}};
+      {"dot_p_of_Inductor", "q_of_Capacitor/C_0 + r_2*i_4 - r_2*p_of_Inductor/L_1"},
+      {"dot_q_of_Capacitor", "i_3 + i_4 - p_of_Inductor/L_1"}};
+
+  // for (auto eq : equations) {
+  //   std::string svar = symEngineExpressionToString(eq.first);
+  //   std::string sres = symEngineExpressionToString(eq.second);
+  //   std::cout<<svar<<"\t"<<sres<<std::endl;
+  // }
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
     std::string sres = symEngineExpressionToString(eq.second);
-
+   
     std::string expected = result[svar];
     EXPECT_EQ(sres, expected);
   }
@@ -273,8 +279,9 @@ TEST(BondGraphSetup, Hydraulic) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_FluidCompliance", "i_3 + i_4 - FluidInertance/L_1"},
-      {"dot_FluidInertance", "FluidCompliance/C_0 + r_2*i_4 - r_2*FluidInertance/L_1"}};
+      {"dot_q_of_FluidCompliance", "i_3 + i_4 - p_of_FluidInertance/L_1"},
+      {"dot_p_of_FluidInertance", "q_of_FluidCompliance/C_0 + r_2*i_4 - r_2*p_of_FluidInertance/L_1"}};
+
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
     std::string sres = symEngineExpressionToString(eq.second);
@@ -292,7 +299,7 @@ TEST(BondGraphSetup, Biochemical) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_Ce", "-Ce*r_2*k_0 + Ce*r_2*k_1"}};
+      {"dot_a_of_Ce", "-r_2*k_0*a_of_Ce + r_2*k_1*a_of_Ce"}};
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -315,7 +322,7 @@ TEST(BondGraphSetup, Composition) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_Ce", "-Ce*r_5*k_2 + Ce*r_5*k_3"},
+      {"dot_a_of_Ce", "-r_5*k_2*a_of_Ce + r_5*k_3*a_of_Ce"},
       {"dot_a_1", "-(-k*a_0*r_5 + k*a_1*r_5)"},
       {"dot_a_2", "-(k*a_2*r_5 - k*a_3*r_5)"},
       {"dot_a_3", "-(-k*a_2*r_5 + k*a_3*r_5)"}};

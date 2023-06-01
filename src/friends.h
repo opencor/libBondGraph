@@ -37,7 +37,7 @@ namespace BG {
 
 /**
 Source JSON used to define domains and factoryMethods
-//Generated on 01 June, 2023 11:54:05
+//Generated on 01 June, 2023 19:31:29
 
 {
     "Annotation": {
@@ -484,19 +484,19 @@ Source JSON used to define domains and factoryMethods
         "FlowSource": {
             "class": "passive",
             "constitutive_relations": [
-                "f_0+q"
+                "f_0+nu"
             ],
-            "description": "Constant Fluid Flow",
+            "description": "Constant Fluid Flow Source",
             "name": "ConstantFluidFlowSource",
             "parameters": {
-                "q": {
+                "nu": {
                     "description": "Flow rate",
                     "dimension": "m^3/s",
                     "value": 1
                 }
             },
-            "shortname": "nu",
-            "variableprefix": "nu"
+            "shortname": "Sf",
+            "variableprefix": "Sf"
         },
         "Inductance": {
             "class": "passive",
@@ -526,19 +526,19 @@ Source JSON used to define domains and factoryMethods
         "PotentialSource": {
             "class": "passive",
             "constitutive_relations": [
-                "e_0 -p"
+                "e_0 -u"
             ],
-            "description": "Constant Fluid Pressure",
-            "name": "ConstantFluidPressureSource",
+            "description": "Constant Pressure Source",
+            "name": "ConstantPressureSource",
             "parameters": {
-                "p": {
+                "u": {
                     "description": "Pressure",
                     "dimension": "J/m^3",
                     "value": 1
                 }
             },
-            "shortname": "P",
-            "variableprefix": "P"
+            "shortname": "Se",
+            "variableprefix": "Se"
         },
         "Resistance": {
             "class": "passive",
@@ -550,7 +550,7 @@ Source JSON used to define domains and factoryMethods
             "parameters": {
                 "r": {
                     "description": "Resistance",
-                    "dimension": "J*s/m^6 ",
+                    "dimension": "J*s/m^6",
                     "universalConstant": false,
                     "value": 1
                 }
@@ -558,7 +558,7 @@ Source JSON used to define domains and factoryMethods
             "shortname": "R",
             "variableprefix": "R"
         },
-        "location": 5
+        "location": 2
     },
     "Mechanical": {
         "BondDimensions": {
@@ -687,7 +687,7 @@ Source JSON used to define domains and factoryMethods
 #define DEFINE_FRIENDS_OF_EFFORTSOURCE \
 	friend RCPLIB::RCP<BGElement> createConstantVoltageSource(const RCPLIB::RCP< BGElementData > &proxy);	\
 	friend RCPLIB::RCP<BGElement> createConstantForce(const RCPLIB::RCP< BGElementData > &proxy);	\
-	friend RCPLIB::RCP<BGElement> createConstantFluidPressureSource(const RCPLIB::RCP< BGElementData > &proxy);	\
+	friend RCPLIB::RCP<BGElement> createConstantPressureSource(const RCPLIB::RCP< BGElementData > &proxy);	\
 	friend RCPLIB::RCP<BGElement> createConstantPotentialSource(const RCPLIB::RCP< BGElementData > &proxy);
 #define DEFINE_FRIENDS_OF_FLOWSOURCE \
 	friend RCPLIB::RCP<BGElement> createConstantCurrentSource(const RCPLIB::RCP< BGElementData > &proxy);	\
@@ -722,7 +722,7 @@ Source JSON used to define domains and factoryMethods
 	else if(rMethodName=="ecnailpmoCdiulFetaerc") {return createFluidCompliance(data);} \
 	else if(rMethodName=="ecnatrenIdiulFetaerc") {return createFluidInertance(data);} \
 	else if(rMethodName=="ecnatsiseRsuocsiVetaerc") {return createViscousResistance(data);} \
-	else if(rMethodName=="ecruoSerusserPdiulFtnatsnoCetaerc") {return createConstantFluidPressureSource(data);} \
+	else if(rMethodName=="ecruoSerusserPtnatsnoCetaerc") {return createConstantPressureSource(data);} \
 	else if(rMethodName=="ecruoSwolFdiulFtnatsnoCetaerc") {return createConstantFluidFlowSource(data);} \
 	else if(rMethodName=="noitcaeRetaerc") {return createReaction(data);} \
 	else if(rMethodName=="noitartnecnoCetaerc") {return createConcentration(data);} \
