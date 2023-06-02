@@ -76,6 +76,6 @@ The LLNL/units library causes 'memory out of bounds' issue when built with strin
 
 A file named `base_units.txt` in the src/unit_proxy directory has been created with the original list of base unit definitions, along with the grep command to generate the shortened list. 
 
-This does not impact biophyical bondgraph definitions, and the use of SI units. The non webassembly library does include all definitions.
+This does not impact biophysical bondgraph definitions, and the use of SI units. The non webassembly library does include all definitions.
 
 A file named `index.html` in src directory is provided for testing, the file along with `BondGraph_WASM.js` and `BondGraph_WASM.wasm` should be made available for loading in a browser.
