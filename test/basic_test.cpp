@@ -251,14 +251,14 @@ TEST(BondGraphSetup, Electrical) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_p_of_Inductor", "q_of_Capacitor/C_0 + r_2*i_4 - r_2*p_of_Inductor/L_1"},
-      {"dot_q_of_Capacitor", "i_3 + i_4 - p_of_Inductor/L_1"}};
+      {"dot_p_of_Inductor", "i_of_ConstantFlowSource_1*r_of_Resistor + q_of_Capacitor/C_of_Capacitor - p_of_Inductor*r_of_Resistor/L_of_Inductor"},
+      {"dot_q_of_Capacitor", "i_of_ConstantFlowSource + i_of_ConstantFlowSource_1 - p_of_Inductor/L_of_Inductor"}};
 
-  // for (auto eq : equations) {
-  //   std::string svar = symEngineExpressionToString(eq.first);
-  //   std::string sres = symEngineExpressionToString(eq.second);
-  //   std::cout<<svar<<"\t"<<sres<<std::endl;
-  // }
+  for (auto eq : equations) {
+    std::string svar = symEngineExpressionToString(eq.first);
+    std::string sres = symEngineExpressionToString(eq.second);
+    std::cout<<svar<<"\t"<<sres<<std::endl;
+  }
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -279,8 +279,14 @@ TEST(BondGraphSetup, Hydraulic) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_q_of_FluidCompliance", "i_3 + i_4 - p_of_FluidInertance/L_1"},
-      {"dot_p_of_FluidInertance", "q_of_FluidCompliance/C_0 + r_2*i_4 - r_2*p_of_FluidInertance/L_1"}};
+      {"dot_q_of_FluidCompliance", "i_of_ConstantFluidFlowSource + i_of_ConstantFluidFlowSource_1 - p_of_FluidInertance/L_of_FluidInertance"},
+      {"dot_p_of_FluidInertance", "q_of_FluidCompliance/C_of_FluidCompliance + r_of_ViscousResistance*i_of_ConstantFluidFlowSource_1 - r_of_ViscousResistance*p_of_FluidInertance/L_of_FluidInertance"}};
+
+  for (auto eq : equations) {
+    std::string svar = symEngineExpressionToString(eq.first);
+    std::string sres = symEngineExpressionToString(eq.second);
+    std::cout<<svar<<"\t"<<sres<<std::endl;
+  }
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -299,7 +305,14 @@ TEST(BondGraphSetup, Biochemical) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_a_of_Ce", "-r_2*k_0*a_of_Ce + r_2*k_1*a_of_Ce"}};
+      {"dot_a_of_Ce_1", "a_of_Ce_1*r_of_Rx*k_of_Ce_1 - r_of_Rx*a_of_Ce*k_of_Ce"},
+      {"dot_a_of_Ce","-a_of_Ce_1*r_of_Rx*k_of_Ce_1 + r_of_Rx*a_of_Ce*k_of_Ce"}};
+
+  for (auto eq : equations) {
+    std::string svar = symEngineExpressionToString(eq.first);
+    std::string sres = symEngineExpressionToString(eq.second);
+    std::cout<<svar<<"\t"<<sres<<std::endl;
+  }
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);
@@ -322,10 +335,16 @@ TEST(BondGraphSetup, Composition) {
   EXPECT_EQ(res.bondGraphValidity, true);
   auto equations = res.dof;
   std::map<std::string, std::string> result = {
-      {"dot_a_of_Ce", "-r_5*k_2*a_of_Ce + r_5*k_3*a_of_Ce"},
-      {"dot_a_1", "-(-k*a_0*r_5 + k*a_1*r_5)"},
-      {"dot_a_2", "-(k*a_2*r_5 - k*a_3*r_5)"},
-      {"dot_a_3", "-(-k*a_2*r_5 + k*a_3*r_5)"}};
+      {"dot_a_of_Ce_1", "-r_of_Rx_1*a_of_Ce*k_of_Ce_2 + r_of_Rx_1*a_of_Ce_1*k_of_Ce_3"},
+      {"dot_a_of_Ce_2", "r_of_Rx_1*a_of_Ce_2*k_of_Ce_2 - r_of_Rx_1*a_of_Ce_3*k_of_Ce_3"},
+      {"dot_a_of_Ce_3", "-r_of_Rx_1*a_of_Ce_2*k_of_Ce_2 + r_of_Rx_1*a_of_Ce_3*k_of_Ce_3"},
+      {"dot_a_of_Ce", "r_of_Rx_1*a_of_Ce*k_of_Ce_2 - r_of_Rx_1*a_of_Ce_1*k_of_Ce_3"}};
+
+  for (auto eq : equations) {
+    std::string svar = symEngineExpressionToString(eq.first);
+    std::string sres = symEngineExpressionToString(eq.second);
+    std::cout<<svar<<"\t"<<sres<<std::endl;
+  }
 
   for (auto eq : equations) {
     std::string svar = symEngineExpressionToString(eq.first);

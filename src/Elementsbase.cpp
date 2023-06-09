@@ -120,11 +120,14 @@ std::string BondGraphElementBase::getVariableName(){
         varname = "E_"+mName;
         }
     }
-    //Handle :
-    std::replace(varname.begin(), varname.end(), ':', 'c');
-    std::replace(varname.begin(), varname.end(), '^', 'p');
-    std::replace(varname.begin(), varname.end(), '{', 'o');
-    std::replace(varname.begin(), varname.end(), '}', 'x');    
+    //Handle punctuations
+    std::replace_if(varname.begin(), varname.end(), [](auto ch) {
+        return std::ispunct(ch);
+    }, '_');    
+    std::replace(varname.begin(), varname.end(), ' ', '_');
+    
+    varname = replaceAll(varname,"__","_");
+    varname = replaceAll(varname,"__","_");
     return varname;
 }
 

@@ -99,6 +99,9 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       for (auto& el : anot.items())
       {
         nlohmann::json vals = el.value();
+        if(el.key()=="Notes"){
+          continue;
+        }        
         if(vals.size()>0){
           std::string relationship = el.key();
           for(auto& a : vals){
@@ -120,15 +123,24 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     }
   };
 
+  std::unordered_map<std::string,unsigned int> uniqueElementNames;
+
   // Do storage, dissipative, junction, source
   // Assign unique dof values to the components to be pulled into a system of
   // equations
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    //std::string eName = mc->getName();
-    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eS) {
+      //std::string eName = mc->getName();
+      std::string eName = mc->getVariableName();
+      if(uniqueElementNames.find(eName)!=uniqueElementNames.end()){
+        unsigned int ec = uniqueElementNames[eName];
+        uniqueElementNames[eName] = ec +1; 
+        eName = eName +"_"+ std::to_string(ec);
+      }else{
+        uniqueElementNames[eName] = 1;
+      }      
       auto values = mc->values();
       ss.str("");
       ss.clear();
@@ -193,9 +205,22 @@ ComputeEquationResults BondGraph::computeStateEquation() {
           // std::get<0>(dimensions[pname]));
           setupAnnotation(mc,pname);
         }
+        if(!std::get<1>(values[i])->universalConstant){
+          //std::cout<<pname<<" -> "<<std::get<1>(values[i])->prefix+"_of_"+eName<<std::endl;
+          nameMap[pname] = std::get<1>(values[i])->prefix+"_of_"+eName;
+        }        
       }
     }
     if (mc->getComponentGroup() == ePH) {
+      //std::string eName = mc->getName();
+      std::string eName = mc->getVariableName();
+      if(uniqueElementNames.find(eName)!=uniqueElementNames.end()){
+        unsigned int ec = uniqueElementNames[eName];
+        uniqueElementNames[eName] = ec +1; 
+        eName = eName +"_"+ std::to_string(ec);
+      }else{
+        uniqueElementNames[eName] = 1;
+      }      
       auto values = mc->values();
       SymEngine::map_basic_basic globalCoordinates;
       // The entire ph has one dofID
@@ -270,6 +295,9 @@ ComputeEquationResults BondGraph::computeStateEquation() {
           // std::get<0>(dimensions[pname]));
           setupAnnotation(mc,pname);
         }
+        if(!std::get<1>(values[i])->universalConstant){
+          nameMap[pname] = std::get<1>(values[i])->prefix+"_of_"+eName;
+        }        
       }
       portHamiltonianCoordinates[dofID] = globalCoordinates;
     }
@@ -278,10 +306,17 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   // Do for resistors
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
-        RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    //std::string eName = mc->getName();
-    std::string eName = mc->getVariableName();
+        RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_); 
     if (mc->getComponentGroup() == eR) {
+      //std::string eName = mc->getName();
+      std::string eName = mc->getVariableName();
+      if(uniqueElementNames.find(eName)!=uniqueElementNames.end()){
+        unsigned int ec = uniqueElementNames[eName];
+        uniqueElementNames[eName] = ec +1; 
+        eName = eName +"_"+ std::to_string(ec);
+      }else{
+        uniqueElementNames[eName] = 1;
+      }        
       auto ports = mc->getPorts();
       // Handle reactions
       for (int pi = 0; pi < ports.size(); pi++) {
@@ -315,6 +350,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
           // std::get<0>(dimensions[pname]));
           setupAnnotation(mc,pname);
         }
+        if(!std::get<1>(values[i])->universalConstant){
+          //std::cout<<pname<<" -> "<<std::get<1>(values[i])->prefix+"_of_"+eName<<std::endl;
+          nameMap[pname] = std::get<1>(values[i])->prefix+"_of_"+eName;
+        }          
       }
     }
   }
@@ -323,8 +362,15 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
     //std::string eName = mc->getName();
-    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eU) {
+      std::string eName = mc->getVariableName();
+      if(uniqueElementNames.find(eName)!=uniqueElementNames.end()){
+        unsigned int ec = uniqueElementNames[eName];
+        uniqueElementNames[eName] = ec +1; 
+        eName = eName +"_"+ std::to_string(ec);
+      }else{
+        uniqueElementNames[eName] = 1;
+      }       
       ess.str("");
       ess.clear();
       fss.str("");
@@ -344,6 +390,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         ess.str("");
         ess.clear();
         ess << std::get<0>(mcValues[pi]) << "_" << dofID;
+        //ess << std::get<0>(mcValues[pi]) << "_of_" << eName;
         u.push_back(SymEngine::symbol(ess.str()));
 
         auto un = std::get<1>(mcValues[pi])->units;
@@ -357,6 +404,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         dimensions["dot_" + ess.str()] =
             std::make_tuple(getPreciseUnitStringPerSecond(un), "0", 'c');
         setupAnnotation(mc,ess.str());
+        nameMap[ess.str()] = std::get<0>(mcValues[pi]) + "_of_" + eName;
       }
       mSources.push_back(mc);
       ++portID;
@@ -368,9 +416,16 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   for (auto &mc_ : connectedComponents) {
     const RCPLIB::RCP<BondGraphElementBase> mc =
         RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(mc_);
-    //std::string eName = mc->getName();
-    std::string eName = mc->getVariableName();
     if (mc->getComponentGroup() == eJ) {
+      //std::string eName = mc->getName();
+      std::string eName = mc->getVariableName();
+      if(uniqueElementNames.find(eName)!=uniqueElementNames.end()){
+        unsigned int ec = uniqueElementNames[eName];
+        uniqueElementNames[eName] = ec +1; 
+        eName = eName +"_"+ std::to_string(ec);
+      }else{
+        uniqueElementNames[eName] = 1;
+      }       
       auto ports = mc->getPorts();
       for (int i = 0; i < ports.size(); i++) {
         ess.str("");
@@ -995,6 +1050,17 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   SymEngine::map_basic_basic beqSubs;
   for (auto &c : bondEquations) {
     beqSubs[c.second] = c.first;
+  }
+
+  //Clean up _'s in the names
+  for (auto &c : nameMap) {
+    std::string subn = c.second;
+    subn = replaceAll(subn,"___","_");
+    subn = replaceAll(subn,"__","_");
+    if(subn[subn.size()-1]=='_'){
+      subn = subn.substr(0,subn.size()-1);
+    }
+    nameMap[c.first] = subn;
   }
 
   SymEngine::map_basic_basic nameMapSubs;

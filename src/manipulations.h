@@ -752,6 +752,26 @@ std::tuple<std::string,std::string,char> getDimensions(SymEngine::RCP<const SymE
                            std::unordered_map<std::string, std::tuple<std::string, std::string, char>> &dimensions, char vtype = 'u')
 {
     if (!SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(eq))) {
+        //Check for the condition where the denominator is a sum of terms
+        auto ieq = SymEngine::expand(SymEngine::div(SymEngine::one,eq));
+        
+        if (SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(ieq))) {
+            //Find the largest term
+            auto terms = SymEngine::expand(ieq)->get_args();
+            SymEngine::RCP<const SymEngine::Basic> maxterm;
+            size_t tc = 0;
+            for (auto t : terms) {
+                auto atoms = SymEngine::atoms<SymEngine::FunctionSymbol, SymEngine::Symbol>(*t);
+                if(atoms.size()>tc){
+                    tc = atoms.size();
+                    maxterm = t;
+                }
+            }
+            //Handle it
+            auto neq = SymEngine::div(SymEngine::one,maxterm);
+            return getDimensions(neq, dimensions);
+        }
+
         std::ostringstream ss;
         auto equation = SymEngine::eliminateExpLog(eq);
         auto atoms = SymEngine::atoms<SymEngine::FunctionSymbol, SymEngine::Symbol>(*equation);
