@@ -4,12 +4,14 @@
 #include <symengine/parser.h>
 #include <symengine/printers/strprinter.h>
 #include <symengine/visitor.h>
+#include <map>
 
 namespace SymEngine {
 class CellMLMathMLPrinter
     : public BaseVisitor<CellMLMathMLPrinter, StrPrinter> {
 protected:
   std::ostringstream s;
+  static std::map<std::string,std::string> mulexpressionMap;
   const SymEngine::RCP<const SymEngine::Basic> negativeOne =
       SymEngine::parse("-1");
 

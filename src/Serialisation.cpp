@@ -312,8 +312,8 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   std::map<std::string,
            std::tuple<std::string, std::string, units::precise_unit>>
       cellMLDefinitions;
-  // Create variables and their annotations
-  std::map<std::string, std::tuple<std::string, std::string, char>> orderedDim(
+  // Create variables and their annotations, variables are sorted in ascending order
+  std::map<std::string, std::tuple<std::string, std::string, char>,std::less<std::string> > orderedDim(
       dimensions.begin(), dimensions.end());
 
   auto getMetaIDString = [&metaidGen](unsigned int mi) {

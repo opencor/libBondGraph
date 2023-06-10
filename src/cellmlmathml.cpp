@@ -4,6 +4,8 @@
 #include <symengine/parser.h>
 #include <symengine/printers.h>
 
+
+
 std::string replaceAll(std::string str, const std::string &from,
                        const std::string &to) {
   size_t start_pos = 0;
@@ -215,7 +217,17 @@ void CellMLMathMLPrinter::bvisit(const Add &x) {
   s << "</apply>";
 }
 
+std::map<std::string,std::string> CellMLMathMLPrinter::mulexpressionMap = {};
+
 void CellMLMathMLPrinter::bvisit(const Mul &x) {
+  //Reuse if encountered apriori
+  std::string x_expr = x.__str__();
+  if(mulexpressionMap.find(x_expr)!=mulexpressionMap.end()){
+    //std::cout<<"Resuing "<<mulexpressionMap[x_expr]<< " for "<<x_expr<<std::endl;
+    s << mulexpressionMap[x_expr];
+    return;
+  }
+
   // Store current state as s gets altered by children
   std::string current = s.str();
   s.str("");
@@ -353,7 +365,7 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   }
   // s has xml for this op
   std::string mulstring = s.str();
-
+  mulexpressionMap[x_expr] = mulstring;
   s.str("");
   s.clear();
   // Add the previous state to s and return
