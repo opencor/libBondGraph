@@ -132,6 +132,7 @@ vtk_encode_string(
 )
 
 set(SRC
+  src/cellmlmathml.cpp
   src/thirdparty/tinyxml2.cpp
   src/componentregistry.cpp
   src/logging.cpp

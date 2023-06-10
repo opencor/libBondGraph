@@ -33,15 +33,23 @@ along with this program. If not, see <https://gnu.org/licenses>.
 #include <symengine/visitor.h>
 #include <tuple>
 
+#include "cellmlmathml.h"
+
 #include <boost/regex.hpp>
 
 namespace BG {
 std::string getMathML(const RCPLIB::RCP<const SymEngine::Basic> &expr) {
-  std::string expression = SymEngine::mathml(*expr);
-  //const std::string from[] = {"<apply><minus/><cn cellml:units=\"dimensionless\">1</cn></apply>","<cn type=\"integer\">-1</cn><ci>","type=\"integer\""};
-  //const std::string to[] = {"<cn cellml:units=\"dimensionless\">1</cn>","<ci>-","cellml:units=\"dimensionless\""};
-  const std::string from[] = {"<apply><minus/><cn cellml:units=\"dimensionless\">1</cn></apply>","type=\"integer\""};
-  const std::string to[] = {"<cn cellml:units=\"dimensionless\">1</cn>","cellml:units=\"dimensionless\""};
+  std::string expression = SymEngine::cellmlmathml(*SymEngine::simplify(expr));
+  // const std::string from[] = {"<apply><minus/><cn
+  // cellml:units=\"dimensionless\">1</cn></apply>","<cn
+  // type=\"integer\">-1</cn><ci>","type=\"integer\""}; const std::string to[] =
+  // {"<cn
+  // cellml:units=\"dimensionless\">1</cn>","<ci>-","cellml:units=\"dimensionless\""};
+  const std::string from[] = {
+      "<apply><minus/><cn cellml:units=\"dimensionless\">1</cn></apply>",
+      "type=\"integer\""};
+  const std::string to[] = {"<cn cellml:units=\"dimensionless\">1</cn>",
+                            "cellml:units=\"dimensionless\""};
 
   auto toCellMLUnit = [&expression](std::string from, std::string to) {
     size_t start_pos = 0;
@@ -53,9 +61,10 @@ std::string getMathML(const RCPLIB::RCP<const SymEngine::Basic> &expr) {
     }
     return expression;
   };
-  //Rather than multiplication by -1, change the sign of the following variable to -
-  for(int i=0;i<2;i++){
-    toCellMLUnit(from[i],to[i]);
+  // Rather than multiplication by -1, change the sign of the following variable
+  // to -
+  for (int i = 0; i < 1; i++) {
+    toCellMLUnit(from[i], to[i]);
   }
 
   return expression;
@@ -264,7 +273,8 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   SymEngine::vec_basic &constraints = bgequations.constraints;
   std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
       dimensions = bgequations.physicalDimensions;
-  std::unordered_map<std::string,std::vector<nlohmann::json>>& annotations = bgequations.annotations;
+  std::unordered_map<std::string, std::vector<nlohmann::json>> &annotations =
+      bgequations.annotations;
   std::map<std::string, std::string> files;
   std::vector<std::string> connections;
   std::map<std::string, std::string> imports;
@@ -272,7 +282,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   std::map<std::string, std::vector<unsigned int>> cmetaid;
   unsigned int metaid = 1;
 
-  std::ostringstream cellML, metaidGen,cmetass;
+  std::ostringstream cellML, metaidGen, cmetass;
   // std::tie(solvable, equations, bondEquations, constraints, dimensions) =
   // bgequations; Find equations whose lhs has dot_
   std::unordered_map<std::string, std::string> derivatives;
@@ -310,10 +320,10 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   std::map<std::string, std::tuple<std::string, std::string, char>> orderedDim(
       dimensions.begin(), dimensions.end());
 
-  auto getMetaIDString = [&metaidGen](unsigned int mi){
+  auto getMetaIDString = [&metaidGen](unsigned int mi) {
     metaidGen.str("");
     metaidGen.clear();
-    metaidGen <<"id_"<<std::setw(9) << std::setfill('0')<< mi;
+    metaidGen << "id_" << std::setw(9) << std::setfill('0') << mi;
     return metaidGen.str();
   };
 
@@ -322,23 +332,23 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     std::string dim = std::get<0>(var.second);
     std::string unitName = dim;
 
-      if (dim != "") {       
-        unitName = unitMap.getUnitName(dim);
-        if(unitName!="UNIT_NAME_NOT_FOUND"){
-          definedUnitNames[var.first] = unitName;
-          mapUnits[unitName] = true;
-          dimUnitMap[dim] = unitName;
-        }else{
-          newDims[var.first] = var.second;
-        }
-      } else {
-        unitName = "dimensionless";
+    if (dim != "") {
+      unitName = unitMap.getUnitName(dim);
+      if (unitName != "UNIT_NAME_NOT_FOUND") {
         definedUnitNames[var.first] = unitName;
-        // mapUnits[unitName] = true; //dimensionless is predefined, so no need
-        // to define it
-        existingUnits[unitName] = units::precise::one;
+        mapUnits[unitName] = true;
         dimUnitMap[dim] = unitName;
+      } else {
+        newDims[var.first] = var.second;
       }
+    } else {
+      unitName = "dimensionless";
+      definedUnitNames[var.first] = unitName;
+      // mapUnits[unitName] = true; //dimensionless is predefined, so no need
+      // to define it
+      existingUnits[unitName] = units::precise::one;
+      dimUnitMap[dim] = unitName;
+    }
   }
   for (auto var : newDims) {
     std::string dim = std::get<0>(var.second);
@@ -656,51 +666,56 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       initVal = "";
     }
 
+    // Check here if a variable has an annotation and add to the variable
+    // definition <variable cmeta:id="id_00000000" initial_value="" name=""
+    // units=""/>
 
-    //Check here if a variable has an annotation and add to the variable definition
-    //<variable cmeta:id="id_00000000" initial_value="" name="" units=""/>
-    
     cmetass.str("");
     cmetass.clear();
-    if(annotations.find(var.first)!=annotations.end()){
-       for(size_t i=0;i<annotations[var.first].size();i++){
-        if(i==0){
-          cmetass<<getMetaIDString(metaid);
-        }else{
-          cmetass<<" id=\""<<getMetaIDString(metaid)<<"\"";
+    if (annotations.find(var.first) != annotations.end()) {
+      for (size_t i = 0; i < annotations[var.first].size(); i++) {
+        if (i == 0) {
+          cmetass << getMetaIDString(metaid);
+        } else {
+          cmetass << " id=\"" << getMetaIDString(metaid) << "\"";
         }
         cmetaid[var.first].push_back(metaid++);
-       }
+      }
     }
     std::string cmeta = cmetass.str();
     switch (std::get<2>(var.second)) {
     case 'p': {
-      if(cmeta.size()==0){
+      if (cmeta.size() == 0) {
         cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-              << "\" public_interface = \"in\" />";
-      }else{
-        cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
-              << "\" public_interface = \"in\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+               << "\" public_interface = \"in\" />";
+      } else {
+        cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
+               << "\" units=\"" << unitName
+               << "\" public_interface = \"in\" "
+                  "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
       }
       break;
     }
     case 'c': {
       // TODO: These need to be mapped to a component
       if (mappedVariables.find(var.first) == mappedVariables.end()) {
-        if(cmeta.size()==0){
-          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-               << "\" " << initVal << "/>";
-        }else{
-          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
-               << "\" " << initVal << " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        if (cmeta.size() == 0) {
+          cellML << "< variable name=\"" << var.first << "\" units=\""
+                 << unitName << "\" " << initVal << "/>";
+        } else {
+          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+                 << var.first << "\" units=\"" << unitName << "\" " << initVal
+                 << " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       } else {
-        if(cmeta.size()==0){
-          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-                << "\" public_interface = \"in\" />";
-        }else{
-          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
-                << "\" public_interface = \"in\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        if (cmeta.size() == 0) {
+          cellML << "< variable name=\"" << var.first << "\" units=\""
+                 << unitName << "\" public_interface = \"in\" />";
+        } else {
+          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+                 << var.first << "\" units=\"" << unitName
+                 << "\" public_interface = \"in\" "
+                    "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       }
       break;
@@ -708,49 +723,58 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     case 's': {
       if (var.first.size() > 4 &&
           var.first.substr(0, 4) == "dot_") { // Derivatives are computed
-        if(cmeta.size()==0){
-          cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-                << "\" public_interface = \"out\" />";
-        }else{
-          cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
-                << "\" public_interface = \"out\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+        if (cmeta.size() == 0) {
+          cellML << "< variable name=\"" << var.first << "\" units=\""
+                 << unitName << "\" public_interface = \"out\" />";
+        } else {
+          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+                 << var.first << "\" units=\"" << unitName
+                 << "\" public_interface = \"out\" "
+                    "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       } else {
         if (value.find(":") == std::string::npos) // If value is not json
-          if(cmeta.size()==0){
+          if (cmeta.size() == 0) {
             cellML << "< variable  name=\"" << var.first << "\" units=\""
-                  << unitName << "\" public_interface = \"out\" " << initVal
-                  << "/>";
-          }else{
-            cellML << "< variable  cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\""
-                  << unitName << "\" public_interface = \"out\" " << initVal
-                  << "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";            
+                   << unitName << "\" public_interface = \"out\" " << initVal
+                   << "/>";
+          } else {
+            cellML << "< variable  cmeta:id=\"" << cmeta << "\" name=\""
+                   << var.first << "\" units=\"" << unitName
+                   << "\" public_interface = \"out\" " << initVal
+                   << "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
           }
         else { // The value is json and is mapped
           // Create a variable vname_smap that will be mapped
           // Set that variable vname_smap as the initial value
           cellML << "< variable  name=\"" << var.first << "_smap\" units=\""
                  << unitName << "\" public_interface = \"in\" />";
-          if(cmeta.size()==0){
+          if (cmeta.size() == 0) {
             cellML << "< variable  name=\"" << var.first << "\" units=\""
-                  << unitName << "\" public_interface = \"out\""
-                  << "initial_value = \"" + var.first + "_smap\" />";
-          }else{
-            cellML << "< variable  cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\""
-                  << unitName << "\" public_interface = \"out\""
-                  << "initial_value = \"" + var.first + "_smap\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                   << unitName << "\" public_interface = \"out\""
+                   << "initial_value = \"" + var.first + "_smap\" />";
+          } else {
+            cellML
+                << "< variable  cmeta:id=\"" << cmeta << "\" name=\""
+                << var.first << "\" units=\"" << unitName
+                << "\" public_interface = \"out\""
+                << "initial_value = \"" + var.first +
+                       "_smap\" "
+                       "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
           }
         }
       }
       break;
     }
     default: { // Variables
-      if(cmeta.size()==0){
+      if (cmeta.size() == 0) {
         cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
-              << "\" public_interface = \"out\" />";
-      }else{
-        cellML << "< variable cmeta:id=\""<<cmeta<<"\" name=\"" << var.first << "\" units=\"" << unitName
-              << "\" public_interface = \"out\" xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+               << "\" public_interface = \"out\" />";
+      } else {
+        cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
+               << "\" units=\"" << unitName
+               << "\" public_interface = \"out\" "
+                  "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
       }
       break;
     }
@@ -820,32 +844,38 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   }
   cellML << "</math>" << std::endl;
   cellML << "</component>" << std::endl;
-  //Generate RDF for annotations
-  if(cmetaid.size()>0){
-    cellML << "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" << std::endl;
-    for(const auto& mi : cmetaid){
-      std::vector<nlohmann::json>& avec = annotations[mi.first];   
-      const std::vector<unsigned int>& ids = mi.second; 
-      cellML <<"\t<!--"<<mi.first<<"-->"<<std::endl;
-      for(size_t i=0;i<avec.size();i++){
-        auto& anot = avec[i];
+  // Generate RDF for annotations
+  if (cmetaid.size() > 0) {
+    cellML
+        << "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
+        << std::endl;
+    for (const auto &mi : cmetaid) {
+      std::vector<nlohmann::json> &avec = annotations[mi.first];
+      const std::vector<unsigned int> &ids = mi.second;
+      cellML << "\t<!--" << mi.first << "-->" << std::endl;
+      for (size_t i = 0; i < avec.size(); i++) {
+        auto &anot = avec[i];
         std::string metaid = getMetaIDString(ids[i]);
         std::string rel = anot["relationship"];
-        std::string identifiers_org_uri="";
-        if(!anot["annotation"]["identifiers_org_uri"].is_null()){
-         identifiers_org_uri = anot["annotation"]["identifiers_org_uri"];
-        }else if(!anot["annotation"]["owlapi_url"].is_null()){
+        std::string identifiers_org_uri = "";
+        if (!anot["annotation"]["identifiers_org_uri"].is_null()) {
+          identifiers_org_uri = anot["annotation"]["identifiers_org_uri"];
+        } else if (!anot["annotation"]["owlapi_url"].is_null()) {
           identifiers_org_uri = anot["annotation"]["owlapi_url"];
         }
         auto ploc = rel.rfind(":");
         if (ploc != std::string::npos) {
-          rel = rel.substr(ploc+1,rel.size());
+          rel = rel.substr(ploc + 1, rel.size());
         }
-        cellML << "\t<rdf:Description rdf:about=\"#"<<metaid<<"\">"<<std::endl;        
-        cellML << "\t\t<"<<rel<<" xmlns=\"http://biomodels.net/biology-qualifiers/\">"<<std::endl;
-        cellML << "\t\t\t<rdf:Description rdf:about=\""<<identifiers_org_uri<<"\"/>"<<std::endl;
-        cellML << "\t\t</"<<rel<<">"<<std::endl;
-        cellML << "\t</rdf:Description>"<<std::endl;
+        cellML << "\t<rdf:Description rdf:about=\"#" << metaid << "\">"
+               << std::endl;
+        cellML << "\t\t<" << rel
+               << " xmlns=\"http://biomodels.net/biology-qualifiers/\">"
+               << std::endl;
+        cellML << "\t\t\t<rdf:Description rdf:about=\"" << identifiers_org_uri
+               << "\"/>" << std::endl;
+        cellML << "\t\t</" << rel << ">" << std::endl;
+        cellML << "\t</rdf:Description>" << std::endl;
       }
     }
     cellML << "</rdf:RDF>" << std::endl;

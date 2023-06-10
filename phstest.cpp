@@ -28,7 +28,7 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
     if (importName.find(k) != importName.end()) {
       assignedImportName = importName[k];
     }
-    
+
     if (val["typeId"] == "BGElement") {
       auto def = val["definition"];
       auto edef = def["annotation"]["ElementDefinition"];
@@ -240,13 +240,13 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
       }
     }
   }
-  
+
   std::cout << file << std::endl;
-  //nlohmann::json res = ioBondGraph->computePortHamiltonian();
-  //std::cout<< res.dump() << std::endl;
+  // nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  // std::cout<< res.dump() << std::endl;
   auto eqs = ioBondGraph->computeStateEquation();
   auto files = getCellML("RLC", ioBondGraph, eqs);
-  std::cout<< files["RLC.cellml"]<<std::endl;
+  std::cout << files["RLC.cellml"] << std::endl;
   return ioBondGraph;
 }
 
@@ -255,7 +255,7 @@ RCPLIB::RCP<BondGraphInterface> simpleRLC() {
 
   // Create the storage
   auto lC1 = createCapacitor();
-  lC1->setParameter("C","1.0","mega Farad");
+  lC1->setParameter("C", "1.0", "mega Farad");
   ioBondGraph->addComponent(lC1);
 
   // Create the resistor
@@ -277,10 +277,10 @@ RCPLIB::RCP<BondGraphInterface> simpleRLC() {
 
   std::cout << " Simple RC+V " << std::endl;
   nlohmann::json res = ioBondGraph->computePortHamiltonian();
-  std::cout<< res.dump() << std::endl;
+  std::cout << res.dump() << std::endl;
   auto eqs = ioBondGraph->computeStateEquation();
-  auto files = getCellML("RLC", ioBondGraph, eqs);  
-  std::cout<< files["RLC.cellml"]<<std::endl;
+  auto files = getCellML("RLC", ioBondGraph, eqs);
+  std::cout << files["RLC.cellml"] << std::endl;
   return ioBondGraph;
 }
 
@@ -326,7 +326,7 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
 
   std::cout << " PHS " << std::endl;
   nlohmann::json res = ioBondGraph->computePortHamiltonian();
-  std::cout<< res.dump() << std::endl;
+  std::cout << res.dump() << std::endl;
   return ioBondGraph;
 }
 
@@ -410,15 +410,16 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 }
 
 int main(int argc, char *argv[]) {
-  //rlc();
-  //simpleRLC();
+  // rlc();
+  // simpleRLC();
   // reaction();
   // eReaction();
-  //loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/bve.json");
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail.json");
+  // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  loadProject(
+      "/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/bve.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail.json");
   return 0;
 }
