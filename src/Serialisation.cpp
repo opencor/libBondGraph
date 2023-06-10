@@ -40,32 +40,28 @@ along with this program. If not, see <https://gnu.org/licenses>.
 namespace BG {
 std::string getMathML(const RCPLIB::RCP<const SymEngine::Basic> &expr) {
   std::string expression = SymEngine::cellmlmathml(*SymEngine::simplify(expr));
-  // const std::string from[] = {"<apply><minus/><cn
-  // cellml:units=\"dimensionless\">1</cn></apply>","<cn
-  // type=\"integer\">-1</cn><ci>","type=\"integer\""}; const std::string to[] =
-  // {"<cn
-  // cellml:units=\"dimensionless\">1</cn>","<ci>-","cellml:units=\"dimensionless\""};
-  const std::string from[] = {
-      "<apply><minus/><cn cellml:units=\"dimensionless\">1</cn></apply>",
-      "type=\"integer\""};
-  const std::string to[] = {"<cn cellml:units=\"dimensionless\">1</cn>",
-                            "cellml:units=\"dimensionless\""};
+  // const std::string from[] = {
+  //     "<apply><minus/><cn cellml:units=\"dimensionless\">1</cn></apply>",
+  //     "type=\"integer\""};
+  // const std::string to[] = {"<cn cellml:units=\"dimensionless\">1</cn>",
+  //                           "cellml:units=\"dimensionless\""};
 
-  auto toCellMLUnit = [&expression](std::string from, std::string to) {
-    size_t start_pos = 0;
-    while ((start_pos = expression.find(from, start_pos)) !=
-           std::string::npos) {
-      expression.replace(start_pos, from.length(), to);
-      start_pos +=
-          to.length(); // Handles case where 'to' is a substring of 'from'
-    }
-    return expression;
-  };
-  // Rather than multiplication by -1, change the sign of the following variable
-  // to -
-  for (int i = 0; i < 1; i++) {
-    toCellMLUnit(from[i], to[i]);
-  }
+  // auto toCellMLUnit = [&expression](std::string from, std::string to) {
+  //   size_t start_pos = 0;
+  //   while ((start_pos = expression.find(from, start_pos)) !=
+  //          std::string::npos) {
+  //     expression.replace(start_pos, from.length(), to);
+  //     start_pos +=
+  //         to.length(); // Handles case where 'to' is a substring of 'from'
+  //   }
+  //   return expression;
+  // };
+  // // Rather than multiplication by -1, change the sign of the following
+  // variable
+  // // to -
+  // for (int i = 0; i < 1; i++) {
+  //   toCellMLUnit(from[i], to[i]);
+  // }
 
   return expression;
 }

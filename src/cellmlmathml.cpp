@@ -353,6 +353,7 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   }
   // s has xml for this op
   std::string mulstring = s.str();
+
   s.str("");
   s.clear();
   // Add the previous state to s and return
@@ -368,7 +369,9 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
 
 void CellMLMathMLPrinter::bvisit(const Pow &x) {
   // Compare is similar to string compare
-  if (x.get_exp()->compare(*negativeOne) == 0) {
+  const auto &exp = x.get_exp();
+  if (exp->get_type_code() == SymEngine::SYMENGINE_CONSTANT &&
+      exp->compare(*negativeOne) == 0) {
     s << "<apply><divide/><cn cellml:units=\"dimensionless\">1</cn>";
     x.get_base()->accept(*this);
     s << "</apply>";
