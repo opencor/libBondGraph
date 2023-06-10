@@ -358,24 +358,8 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   // Add the previous state to s and return
   s << current << mulstring;
 
-  //   std::cout << x << "\n" << s.str() << std::endl;
-  //   s.str("");
-  //   s.clear();
-
-  //   //   for (int i = 0; i < atypes.size(); i++) {
-  //   //     // std::cout << *args[i] << " : " << mathml[i] << " (" <<
-  //   atypes[i] <<
-  //   //     ") "
-  //   //     //           << (atypes[i] == SymEngine::SYMENGINE_SYMBOL) << " "
-  //   //     //           << (atypes[i] == SymEngine::SYMENGINE_INTEGER) << " "
-  //   //     //           << (atypes[i] == SymEngine::SYMENGINE_POW) << "\t";
-  //   //     if (!ignore[i])
-  //   //       std::cout << *args[i] << " : " << mathml[i] << "\t";
-  //   //   }
-  //   //   std::cout << std::endl;
-
-  //   s << current << "<apply><times/>";
-  //   // auto args = x.get_args();
+  // Default code from symengine - left for reference
+  //   auto args = x.get_args();
   //   for (auto arg : args) {
   //     arg->accept(*this);
   //   }
