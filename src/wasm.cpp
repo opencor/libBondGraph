@@ -70,6 +70,9 @@ static RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson){
         auto dName = def["mid"]; // Connections store mid's
 
         std::string domain = edef["domain"];
+        if(domain == "Annotation"){
+          continue;
+        }        
         std::string type = edef["type"];
         std::string clas = edef["class"];
         std::string mName = methods[domain][type];

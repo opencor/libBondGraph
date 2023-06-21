@@ -4,7 +4,8 @@
 
 using namespace BG;
 
-RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
+RCPLIB::RCP<BondGraphInterface> loadProject(std::string file,
+                                            bool phs = false) {
   std::ifstream ifs(file);
   nlohmann::json jf = nlohmann::json::parse(ifs);
   nlohmann::json methods = getSupportedPhysicalDomainsAndFactoryMethods();
@@ -36,18 +37,20 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
       auto annot = def["annotation"]["Annotation"];
 
       std::string displayName = def["displayname"];
-      std::replace(displayName.begin(), displayName.end(), ':', 'c');
-      // .replace("^", "_p_")
-      // .replace("{", "")
-      // .replace("}", "")
-      // .replace("0", "O")
-      // .replace("1", "I")
-      // .replace(":", "_c_");
+      // std::replace(displayName.begin(), displayName.end(), ':', 'c');
+      std::replace_if(
+          displayName.begin(), displayName.end(),
+          [](auto ch) { return std::ispunct(ch); }, '_');
+      std::replace(displayName.begin(), displayName.end(), ' ', '_');
 
       auto cellmlName = displayName;
       auto dName = def["mid"]; // Connections store mid's
 
       std::string domain = edef["domain"];
+      if (domain == "Annotation") {
+        continue;
+      }
+
       std::string type = edef["type"];
       std::string clas = edef["class"];
       std::string mName = methods[domain][type];
@@ -186,6 +189,7 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
       ioBondGraph->addComponent(bge);
     }
   }
+
   // Create the connections
   for (const auto &itm : items.items()) {
     auto k = itm.key();
@@ -242,15 +246,18 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file) {
   }
 
   std::cout << file << std::endl;
-  // nlohmann::json res = ioBondGraph->computePortHamiltonian();
-  // std::cout<< res.dump() << std::endl;
-  auto eqs = ioBondGraph->computeStateEquation();
-  auto files = getCellML("RLC", ioBondGraph, eqs);
-  std::cout << files["RLC.cellml"] << std::endl;
+  if (phs) {
+    nlohmann::json res = ioBondGraph->computePortHamiltonian();
+    std::cout << res.dump() << std::endl;
+  } else {
+    auto eqs = ioBondGraph->computeStateEquation();
+    auto files = getCellML("RLC", ioBondGraph, eqs);
+    std::cout << files["RLC.cellml"] << std::endl;
+  }
   return ioBondGraph;
 }
 
-RCPLIB::RCP<BondGraphInterface> simpleRLC() {
+RCPLIB::RCP<BondGraphInterface> simpleRCV() {
   auto ioBondGraph = createBondGraph();
 
   // Create the storage
@@ -279,8 +286,8 @@ RCPLIB::RCP<BondGraphInterface> simpleRLC() {
   nlohmann::json res = ioBondGraph->computePortHamiltonian();
   std::cout << res.dump() << std::endl;
   auto eqs = ioBondGraph->computeStateEquation();
-  auto files = getCellML("RLC", ioBondGraph, eqs);
-  std::cout << files["RLC.cellml"] << std::endl;
+  auto files = getCellML("RCV", ioBondGraph, eqs);
+  std::cout << files["RCV.cellml"] << std::endl;
   return ioBondGraph;
 }
 
@@ -411,14 +418,17 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 
 int main(int argc, char *argv[]) {
   // rlc();
-  // simpleRLC();
-  // reaction();
-  // eReaction();
+  // simpleRCV();
+  reaction();
+  eReaction();
   // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/bve.json");
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",
+  // true);
   return 0;
 }

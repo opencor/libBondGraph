@@ -258,6 +258,7 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
     mathml.push_back(s.str());
     ignore.push_back(false);
     denom.push_back(false);
+
     s.str("");
     s.clear();
   }
@@ -282,6 +283,15 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
             mathml[a],
             "<apply><divide/><cn cellml:units=\"dimensionless\">1</cn>", "");
         ax = replaceAll(ax, "</apply>", "");
+        mathml[a] = ax;
+        denom[a] = true;
+        divisionOp++;
+      }else if((mathml[a].find("<apply><power/>") != std::string::npos) && 
+        (mathml[a].find(
+              "<cn cellml:units=\"dimensionless\">-1</cn></apply>") !=
+          std::string::npos)){
+        std::string ax = replaceAll(mathml[a],"<apply><power/>", "");
+        ax = replaceAll(ax,"<cn cellml:units=\"dimensionless\">-1</cn></apply>", "");
         mathml[a] = ax;
         denom[a] = true;
         divisionOp++;
@@ -368,6 +378,8 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   mulexpressionMap[x_expr] = mulstring;
   s.str("");
   s.clear();
+
+  
   // Add the previous state to s and return
   s << current << mulstring;
 
