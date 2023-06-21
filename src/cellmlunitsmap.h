@@ -322,6 +322,7 @@ public:
                 uname = unit;
                 //Definition does not exist
                 if (existingNames.find(unit) == existingNames.end()) {
+                     std::replace(uname.begin(), uname.end(), '-', 'n');
                     //Replace any _, ^
                     size_t pos = 0;
                     while((pos = uname.find("/", pos)) != std::string::npos) {
@@ -333,7 +334,21 @@ public:
                         uname.replace(pos, 1, "_pow_");
                         pos += 5;
                     }
+                    //Replace operators
+                    std::replace_if(
+                        uname.begin(), uname.end(),
+                        [](auto ch) { return std::ispunct(ch); }, '_');
+                    std::replace(uname.begin(), uname.end(), ' ', '_');
+                    if(std::isdigit(uname[0])){
+                        if(uname[0]=='1'){
+                            uname[0] = 'I';
+                        }else{
+                            uname[0] = 'D';
+                        }
+                    }
                 }
+                uname = replaceAll(uname,"__","_");
+                //std::cout<<uname<<std::endl;
             }
             mappedDimensionName[unit] = uname;
         }else{
