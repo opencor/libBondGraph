@@ -250,9 +250,9 @@ public:
   //! Get the values associated with the element
   virtual std::vector<std::tuple<std::string, RCPLIB::RCP<Value>>> values() = 0;
   //! Set the PMR annotation
-  virtual void setPMRAnnotation(nlohmann::json& annotation) = 0;
+  virtual void setPMRAnnotation(nlohmann::json &annotation) = 0;
   //! Get the PMR annotation
-  virtual nlohmann::json& getPMRAnnotation() = 0;  
+  virtual nlohmann::json &getPMRAnnotation() = 0;
 };
 
 class EXPORTED ComputeEquationResults {
@@ -282,8 +282,9 @@ public:
   // parameter (p)
   std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
       physicalDimensions;
-  //Annotations associated with each model variable - the relationship information is available in the json
-  std::unordered_map<std::string,std::vector<nlohmann::json>> annotations;
+  // Annotations associated with each model variable - the relationship
+  // information is available in the json
+  std::unordered_map<std::string, std::vector<nlohmann::json>> annotations;
 };
 
 class EXPORTED BondGraphInterface {
@@ -450,6 +451,8 @@ public:
    * @return instance of ComputeEquationResults
    */
   virtual ComputeEquationResults computeStateEquation() = 0;
+
+  virtual ComputeEquationResults computeStateEquationNoDim() = 0;
 
   /**
    * @brief Compute the Port Hamiltonian of the bondgraph

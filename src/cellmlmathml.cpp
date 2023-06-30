@@ -4,8 +4,6 @@
 #include <symengine/parser.h>
 #include <symengine/printers.h>
 
-
-
 std::string replaceAll(std::string str, const std::string &from,
                        const std::string &to) {
   size_t start_pos = 0;
@@ -217,13 +215,15 @@ void CellMLMathMLPrinter::bvisit(const Add &x) {
   s << "</apply>";
 }
 
-std::map<std::string,std::string> CellMLMathMLPrinter::mulexpressionMap = {};
+std::map<std::string, std::string> CellMLMathMLPrinter::mulexpressionMap = {};
 
 void CellMLMathMLPrinter::bvisit(const Mul &x) {
-  //Reuse if encountered apriori
+  // Reuse if encountered apriori
   std::string x_expr = x.__str__();
-  if(mulexpressionMap.find(x_expr)!=mulexpressionMap.end()){
-    //std::cout<<"Resuing "<<mulexpressionMap[x_expr]<< " for "<<x_expr<<std::endl;
+  // std::cout << __LINE__ << "\t" << x_expr << std::endl;
+  if (mulexpressionMap.find(x_expr) != mulexpressionMap.end()) {
+    // std::cout<<"Resuing "<<mulexpressionMap[x_expr]<< " for
+    // "<<x_expr<<std::endl;
     s << mulexpressionMap[x_expr];
     return;
   }
@@ -236,7 +236,6 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   std::vector<std::string> mathml;
   std::vector<bool> ignore;
   std::vector<bool> denom;
-  bool numAvailable = false;
   unsigned int divisionOp = 0;
   unsigned int leftCount = 0;
   auto args = x.get_args();
@@ -248,17 +247,15 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
     if (code == SymEngine::SYMENGINE_INTEGER &&
         negativeOne->compare(*arg) == 0) {
       negOne = i;
-      numAvailable = true;
     }
-    if (code == SymEngine::SYMENGINE_SYMBOL) {
-      numAvailable = true;
-    }
+
     atypes.push_back(code);
     arg->accept(*this);
     mathml.push_back(s.str());
     ignore.push_back(false);
     denom.push_back(false);
-
+    // std::cout << __LINE__ << "\t" << arg->__str__() << "\t" << s.str()
+    //<< std::endl;
     s.str("");
     s.clear();
   }
@@ -286,12 +283,13 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
         mathml[a] = ax;
         denom[a] = true;
         divisionOp++;
-      }else if((mathml[a].find("<apply><power/>") != std::string::npos) && 
-        (mathml[a].find(
-              "<cn cellml:units=\"dimensionless\">-1</cn></apply>") !=
-          std::string::npos)){
-        std::string ax = replaceAll(mathml[a],"<apply><power/>", "");
-        ax = replaceAll(ax,"<cn cellml:units=\"dimensionless\">-1</cn></apply>", "");
+      } else if ((mathml[a].find("<apply><power/>") != std::string::npos) &&
+                 (mathml[a].find(
+                      "<cn cellml:units=\"dimensionless\">-1</cn></apply>") !=
+                  std::string::npos)) {
+        std::string ax = replaceAll(mathml[a], "<apply><power/>", "");
+        ax = replaceAll(
+            ax, "<cn cellml:units=\"dimensionless\">-1</cn></apply>", "");
         mathml[a] = ax;
         denom[a] = true;
         divisionOp++;
@@ -300,57 +298,47 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
   }
   s.str("");
   s.clear();
+
   // Handle divisions
   if (divisionOp > 0) {
-    std::ostringstream ss;
+    std::ostringstream denoms;
     if (divisionOp > 1) {
-      ss << "<apply><times/>";
+      denoms << "<apply><times/>";
       for (int a = 0; a < atypes.size(); a++) {
         if (denom[a]) {
-          ss << mathml[a];
+          denoms << mathml[a];
           ignore[a] = true;
         }
       }
-      ss << "</apply>";
+      denoms << "</apply>";
     } else {
       for (int a = 0; a < atypes.size(); a++) {
         if (denom[a]) {
-          ss << mathml[a];
+          denoms << mathml[a];
           ignore[a] = true;
         }
       }
     }
     // Find a numerator
-    if (numAvailable) {
-      for (int a = atypes.size() - 1; a > -1; a--) {
-        if (!denom[a] && !ignore[a]) {
-          s << "<apply><divide/>" << mathml[a];
-          ignore[a] = true;
-          break;
-        }
-      }
-    } else {
-      // If no numerators are available use 1
-      s << "<apply><divide/><cn cellml:units=\"dimensionless\">1.0</cn>";
-    }
-    // Check if any terms appearing in the numerator have not been included
+    std::ostringstream nums;
     leftCount = 0;
     for (int a = 0; a < atypes.size(); a++) {
       if (!ignore[a]) {
+        nums << mathml[a];
         leftCount++;
       }
     }
-    if (leftCount > 0) {
-      s << "<apply><times/>";
-      for (int a = 0; a < atypes.size(); a++) {
-        if (!ignore[a]) {
-          s << mathml[a];
-        }
-      }
+    if (leftCount > 1) {
+      std::string n = nums.str();
+      nums.str("");
+      nums.clear();
+      nums << "<apply><times/>" << n << "</apply>";
+    } else if (leftCount == 0) {
+      nums << "<cn cellml:units=\"dimensionless\">1.0</cn>";
     }
-    s << ss.str();
-    // Close apply for divide
-    s << "</apply>";
+
+    s << "<apply><divide/>" << nums.str() << denoms.str() << "</apply>";
+
   } else {
     // Check if more than one term is left to use times
     leftCount = 0;
@@ -374,12 +362,12 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
     }
   }
   // s has xml for this op
+
   std::string mulstring = s.str();
   mulexpressionMap[x_expr] = mulstring;
   s.str("");
   s.clear();
-
-  
+  // std::cout << __LINE__ << "\t" << mulstring << std::endl;
   // Add the previous state to s and return
   s << current << mulstring;
 
@@ -393,6 +381,7 @@ void CellMLMathMLPrinter::bvisit(const Mul &x) {
 
 void CellMLMathMLPrinter::bvisit(const Pow &x) {
   // Compare is similar to string compare
+  // std::cout << __LINE__ << "\t" << x.__str__() << std::endl;
   const auto &exp = x.get_exp();
   if (exp->get_type_code() == SymEngine::SYMENGINE_CONSTANT &&
       exp->compare(*negativeOne) == 0) {
@@ -405,6 +394,7 @@ void CellMLMathMLPrinter::bvisit(const Pow &x) {
     x.get_exp()->accept(*this);
     s << "</apply>";
   }
+  // std::cout << __LINE__ << "\t" << s.str() << std::endl;
 }
 
 void CellMLMathMLPrinter::bvisit(const Constant &x) {
@@ -446,6 +436,7 @@ void CellMLMathMLPrinter::bvisit(const FunctionSymbol &x) {
 }
 
 void CellMLMathMLPrinter::bvisit(const Equality &x) {
+  // std::cout << __LINE__ << "=" << std::endl << x.__str__() << std::endl;
   s << "<apply><eq/>";
   x.get_arg1()->accept(*this);
   x.get_arg2()->accept(*this);

@@ -312,9 +312,11 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   std::map<std::string,
            std::tuple<std::string, std::string, units::precise_unit>>
       cellMLDefinitions;
-  // Create variables and their annotations, variables are sorted in ascending order
-  std::map<std::string, std::tuple<std::string, std::string, char>,std::less<std::string> > orderedDim(
-      dimensions.begin(), dimensions.end());
+  // Create variables and their annotations, variables are sorted in ascending
+  // order
+  std::map<std::string, std::tuple<std::string, std::string, char>,
+           std::less<std::string>>
+      orderedDim(dimensions.begin(), dimensions.end());
 
   auto getMetaIDString = [&metaidGen](unsigned int mi) {
     metaidGen.str("");
@@ -682,13 +684,13 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     switch (std::get<2>(var.second)) {
     case 'p': {
       if (cmeta.size() == 0) {
-        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+        cellML << "<variable name=\"" << var.first << "\" units=\"" << unitName
                << "\" public_interface = \"in\" />";
       } else {
-        cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
+        cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
                << "\" units=\"" << unitName
                << "\" public_interface = \"in\" "
-                  "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                  " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
       }
       break;
     }
@@ -696,22 +698,22 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       // TODO: These need to be mapped to a component
       if (mappedVariables.find(var.first) == mappedVariables.end()) {
         if (cmeta.size() == 0) {
-          cellML << "< variable name=\"" << var.first << "\" units=\""
+          cellML << "<variable name=\"" << var.first << "\" units=\""
                  << unitName << "\" " << initVal << "/>";
         } else {
-          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+          cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\""
                  << var.first << "\" units=\"" << unitName << "\" " << initVal
                  << " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       } else {
         if (cmeta.size() == 0) {
-          cellML << "< variable name=\"" << var.first << "\" units=\""
+          cellML << "<variable name=\"" << var.first << "\" units=\""
                  << unitName << "\" public_interface = \"in\" />";
         } else {
-          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+          cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\""
                  << var.first << "\" units=\"" << unitName
                  << "\" public_interface = \"in\" "
-                    "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                    " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       }
       break;
@@ -720,57 +722,63 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       if (var.first.size() > 4 &&
           var.first.substr(0, 4) == "dot_") { // Derivatives are computed
         if (cmeta.size() == 0) {
-          cellML << "< variable name=\"" << var.first << "\" units=\""
+          cellML << "<variable name=\"" << var.first << "\" units=\""
                  << unitName << "\" public_interface = \"out\" />";
         } else {
-          cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\""
+          cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\""
                  << var.first << "\" units=\"" << unitName
                  << "\" public_interface = \"out\" "
-                    "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                    " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
         }
       } else {
         if (value.find(":") == std::string::npos) // If value is not json
           if (cmeta.size() == 0) {
-            cellML << "< variable  name=\"" << var.first << "\" units=\""
+            cellML << "<variable  name=\"" << var.first << "\" units=\""
                    << unitName << "\" public_interface = \"out\" " << initVal
                    << "/>";
           } else {
-            cellML << "< variable  cmeta:id=\"" << cmeta << "\" name=\""
+            cellML << "<variable  cmeta:id=\"" << cmeta << "\" name=\""
                    << var.first << "\" units=\"" << unitName
                    << "\" public_interface = \"out\" " << initVal
-                   << "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                   << " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
           }
         else { // The value is json and is mapped
           // Create a variable vname_smap that will be mapped
           // Set that variable vname_smap as the initial value
-          cellML << "< variable  name=\"" << var.first << "_smap\" units=\""
+          cellML << "<variable  name=\"" << var.first << "_smap\" units=\""
                  << unitName << "\" public_interface = \"in\" />";
           if (cmeta.size() == 0) {
-            cellML << "< variable  name=\"" << var.first << "\" units=\""
+            cellML << "<variable  name=\"" << var.first << "\" units=\""
                    << unitName << "\" public_interface = \"out\""
                    << "initial_value = \"" + var.first + "_smap\" />";
           } else {
-            cellML
-                << "< variable  cmeta:id=\"" << cmeta << "\" name=\""
-                << var.first << "\" units=\"" << unitName
-                << "\" public_interface = \"out\""
-                << "initial_value = \"" + var.first +
-                       "_smap\" "
-                       "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+            cellML << "<variable  cmeta:id=\"" << cmeta << "\" name=\""
+                   << var.first << "\" units=\"" << unitName
+                   << "\" public_interface = \"out\""
+                   << "initial_value = \"" + var.first +
+                          "_smap\" "
+                          " xmlns:cmeta=\"http://www.cellml.org/metadata/"
+                          "1.0#\" />";
           }
         }
       }
       break;
     }
+    case 'd': { // Dimension balancing variables
+      cellML << "<variable name=\"" << var.first << "\" units=\"" << unitName
+             << "\" initial_value = \"" + std::get<1>(var.second) + "\""
+             << " public_interface = \"out\" />";
+      break;
+    }
     default: { // Variables
       if (cmeta.size() == 0) {
-        cellML << "< variable name=\"" << var.first << "\" units=\"" << unitName
+        cellML << "<variable name=\"" << var.first << "\" units=\"" << unitName
                << "\" public_interface = \"out\" />";
       } else {
-        cellML << "< variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
+        cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
                << "\" units=\"" << unitName
                << "\" public_interface = \"out\" "
-                  "xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
+                  " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
       }
       break;
     }

@@ -1958,7 +1958,6 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       }
 
       auto vecfR1R2 = matT * vecfR;
-
       SymbolicMatrix matD2R1R2 = matD2 * matT;
 
       SymEngine::DenseMatrix D2R1R2(matD2R1R2.rows(), matD2R1R2.cols());
@@ -1969,16 +1968,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       }
       // Test if the constitutive relations of the resistive elements can be
       // written in input - output form Expensive test - ignored
-      // Except the part where matD2R1R2 is updated
-      if (posR1.size() > 0 && posR2.size() > 0) {
-        auto zeroM = SymbolicMatrix(posR1.size(), posR2.size());
-        zeroM.fill(symZero);
-        matD2R1R2.block(0, matD2R1R2.cols() - posR2.size() - 1, posR1.size(),
-                        posR2.size()) = zeroM;
-      }
 
       SymEngine::DenseMatrix matD2R1R2inv(matD2R1R2.rows(), matD2R1R2.cols());
       D2R1R2.inv(matD2R1R2inv);
+
+      std::cout << __LINE__ << "matD2R1R2" << std::endl;
+      std::cout << matD2R1R2 << std::endl;
 
       SymbolicMatrix matR2;
       if (posR1.size() == 0) {
@@ -1999,6 +1994,9 @@ nlohmann::json BondGraph::computePortHamiltonian() {
               p1.set(i, j, matD2R1R2(i, j));
             }
           }
+          std::cout << __LINE__ << "p1" << std::endl;
+          std::cout << p1 << std::endl;
+
           p1.inv(p1inv);
           SymbolicMatrix p1inv_(posR1.size(), posR1.size());
           for (int i = 0; i < posR1.size(); i++) {
@@ -2031,6 +2029,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
               p2;
         }
       }
+
       SymbolicMatrix inumR(numR, numR);
       for (int i = 0; i < numR; i++)
         inumR(i, i) = symOne;

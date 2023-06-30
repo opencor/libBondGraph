@@ -280,6 +280,7 @@ public:
    * @return instance of ComputeEquationResults
    */
   ComputeEquationResults computeStateEquation();
+  ComputeEquationResults computeStateEquationNoDim();
 
   /**
    * @brief Compute the Port Hamiltonian of the bondgraph

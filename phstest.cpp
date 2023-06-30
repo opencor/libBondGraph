@@ -142,7 +142,6 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file,
         if (bge.is_null())
           bge = BG::createBondgraphElement(mName);
         bge->setName(cellmlName);
-
         for (const auto &pv : sp) {
           auto nm = pv["name"];
           if (pv["value"].is_object()) {
@@ -247,8 +246,9 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file,
 
   std::cout << file << std::endl;
   if (phs) {
-    nlohmann::json res = ioBondGraph->computePortHamiltonian();
-    std::cout << res.dump() << std::endl;
+    ioBondGraph->computeStateEquationNoDim();
+    // nlohmann::json res = ioBondGraph->computePortHamiltonian();
+    // std::cout << res.dump() << std::endl;
   } else {
     auto eqs = ioBondGraph->computeStateEquation();
     auto files = getCellML("RLC", ioBondGraph, eqs);
@@ -418,17 +418,18 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 
 int main(int argc, char *argv[]) {
   // rlc();
-  // simpleRCV();
-  reaction();
-  eReaction();
-  // loadProject("D:/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
+   simpleRCV();
+   reaction();
+   eReaction();
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/bve.json");
-  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail.json");
-  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json");
-  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",
-  // true);
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail1.json");
+  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/DimCheck.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json",true);
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",true);
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RC2Units.json");//,
+  //             true);
   return 0;
 }
