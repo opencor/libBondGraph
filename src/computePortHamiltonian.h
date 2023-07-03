@@ -71,6 +71,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymEngine::vec_basic parameterDivisor; // Parameter by which JR matrix entry
                                            // should be divided by as Derivative
                                            // of Hamiltonian will have it
+    std::vector<bool> chemicalStorage;
     // Global dof matrix
     // Count the number of element in each group
     mUcount = 0; // Number of source bonds
@@ -180,6 +181,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string energy = "(1/2)*(1/" + parm + ")*" + state + "**2";
           hamiltonianString.push_back(energy);
           parameterDivisor.push_back(SymEngine::parse(parm));
+          chemicalStorage.push_back(false);
           break;
         }
         case bConcentration: {
@@ -208,6 +210,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string energy = pR + "*" + pT + "*" + state + "*(log(" + parm +
                                "*" + state + ")-1.0)";
           parameterDivisor.push_back(SymEngine::parse(parm));
+          chemicalStorage.push_back(true);
           hamiltonianString.push_back(energy);
           break;
         }
@@ -878,6 +881,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymEngine::DenseMatrix R(numStates, numStates);
     SymEngine::DenseMatrix Q(numStates, numStates);
     SymEngine::eye(Q);
+    for (int ci = 0; ci < numStates; ci++) {
+      if (!chemicalStorage[ci]) {
+        Q.set(ci, ci, SymEngine::div(SymEngine::one, parameterDivisor[ci]));
+      }
+    }
+
     SymEngine::DenseMatrix JRT(numStates, numStates);
     JR.transpose(JRT);
     // Symmetric part is (A + A^T)/2
@@ -948,6 +957,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     phs["u"] = to_json(U);
     phs["matE"] = to_json(E);
     phs["matQ"] = to_json(Q);
+
+    std::cout << *hmexp << std::endl;
+    std::cout << "J" << std::endl;
+    std::cout << J << std::endl;
+    std::cout << "R" << std::endl;
+    std::cout << R << std::endl;
 
     result["stateVector"] = to_json(x);
     result["Hderivatives"] = to_json(derivatives);

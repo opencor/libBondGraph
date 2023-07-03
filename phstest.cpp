@@ -142,6 +142,7 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file,
         if (bge.is_null())
           bge = BG::createBondgraphElement(mName);
         bge->setName(cellmlName);
+        // std::cout << cellmlName << "\t" << sp.dump(2) << std::endl;
         for (const auto &pv : sp) {
           auto nm = pv["name"];
           if (pv["value"].is_object()) {
@@ -246,9 +247,8 @@ RCPLIB::RCP<BondGraphInterface> loadProject(std::string file,
 
   std::cout << file << std::endl;
   if (phs) {
-    ioBondGraph->computeStateEquationNoDim();
-    // nlohmann::json res = ioBondGraph->computePortHamiltonian();
-    // std::cout << res.dump() << std::endl;
+    nlohmann::json res = ioBondGraph->computePortHamiltonian();
+    std::cout << res.dump(2) << std::endl;
   } else {
     auto eqs = ioBondGraph->computeStateEquation();
     auto files = getCellML("RLC", ioBondGraph, eqs);
@@ -300,7 +300,7 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
 
   // Create the inductor
   auto lL1 = createInductor();
-  ioBondGraph->addComponent(lL1);  
+  ioBondGraph->addComponent(lL1);
 
   // Create the resistor
   auto lR = createResistor();
@@ -320,15 +320,11 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   ioBondGraph->connect(lJ1_1, lL1);
   ioBondGraph->connect(lJ1_1, lSe);
 
-  std::cout<<"State space"<<std::endl;
-  auto eqs = ioBondGraph->computeStateEquationNoDim();  
-
   std::cout << " PHS " << std::endl;
   nlohmann::json res = ioBondGraph->computePortHamiltonian();
   std::cout << res.dump() << std::endl;
   return ioBondGraph;
 }
-
 
 RCPLIB::RCP<BondGraphInterface> rlc2() {
   auto ioBondGraph = createBondGraph();
@@ -376,9 +372,6 @@ RCPLIB::RCP<BondGraphInterface> rlc2() {
   return ioBondGraph;
 }
 
-
-
-
 RCPLIB::RCP<BondGraphInterface> reaction() {
   auto ioBondGraph = createBondGraph();
 
@@ -411,7 +404,6 @@ RCPLIB::RCP<BondGraphInterface> reaction() {
   ioBondGraph->connectInverting(Re, 0, Y_A);
   ioBondGraph->connectInverting(Re, 1, Y_B);
 
-  ioBondGraph->computeStateEquationNoDim();
   std::cout << " Reaction " << std::endl;
   ioBondGraph->computePortHamiltonian();
 
@@ -453,7 +445,6 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
   ioBondGraph->connect(lJ1_A, lC1);
   ioBondGraph->connect(lJ1_B, lC2);
 
-  ioBondGraph->computeStateEquationNoDim();
   std::cout << " eReaction " << std::endl;
   ioBondGraph->computePortHamiltonian();
 
@@ -461,19 +452,19 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 }
 
 int main(int argc, char *argv[]) {
-   rlc();
+  rlc();
   //  simpleRCV();
   reaction();
-  //eReaction();
+  eReaction();
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/bve.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Fail1.json");
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/DimCheck.json");
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/DimCheck.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",true);
-  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RC2Units.json");//,
-  //             true);
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RLCVI.json",true);
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RLCVI.json");
   return 0;
 }
