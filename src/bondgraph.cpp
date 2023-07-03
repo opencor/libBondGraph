@@ -25,52 +25,6 @@
 
 #include "simplifyexplog.h"
 
-// #if defined(_MSC_VER)
-// // Math defines like M_PI_2 are used by eigen, without this MSVC compilation
-// // fails
-// #include <corecrt_math_defines.h>
-// #endif
-// // For computing porthamiltonian
-// // Throw assertion failures as exceptions
-// #define eigen_assert(X) \
-//   do { \
-//     if (!(X)) \
-//       throw BG::BGException(#X); \
-//   } while (false);
-// // make sure Eigen is not included before your define:
-// #include "Eigen/Dense"
-// #include <Eigen/Core>
-
-// using number = SymEngine::Expression;
-// using SymbolicMatrix = Eigen::MatrixX<number>;
-
-// namespace Eigen {
-// // Dispatch to help with printing
-
-// template <>
-// struct NumTraits<SymEngine::Expression>
-//     : GenericNumTraits<SymEngine::Expression> {
-//   enum {
-//     RequireInitialization = 1,
-//     ReadCost = HugeCost,
-//     AddCost = HugeCost,
-//     MulCost = HugeCost
-//   };
-
-//   EIGEN_CONSTEXPR
-//   static inline int digits10() { return 0; }
-
-// private:
-//   static inline SymEngine::Expression epsilon();
-//   static inline SymEngine::Expression dummy_precision();
-//   static inline SymEngine::Expression lowest();
-//   static inline SymEngine::Expression highest();
-//   static inline SymEngine::Expression infinity();
-//   static inline SymEngine::Expression quiet_NaN();
-// };
-
-// } // namespace Eigen
-
 namespace NGraph {
 // Combine graphs
 sGraph &operator+=(sGraph &A, const sGraph &B) {
