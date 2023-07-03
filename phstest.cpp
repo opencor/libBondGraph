@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
   rlc();
   //  simpleRCV();
   reaction();
-  eReaction();
+  // eReaction();
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");

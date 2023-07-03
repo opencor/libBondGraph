@@ -36,7 +36,6 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   std::unordered_map<size_t, SymEngine::map_basic_basic>
       portHamiltonianCoordinates;
 
-
   // Global dof matrix
   // Count the number of element in each group
   mUcount = 0; // Number of source bonds
@@ -125,68 +124,77 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         }
       };
 
-  auto generateUnitConsistantEquation =
-      [&dimensions](const SymEngine::RCP<const SymEngine::Basic> lhs,
-                    const SymEngine::RCP<const SymEngine::Basic> &rhs) {
-        auto targetVarDim = std::get<0>(dimensions[lhs->__str__()]);
-        // Any new varible that is created uses var qualifier of 'd', results in
-        // used when creating variables during cellml serialisation
-        if (SymEngine::is_a_Number(*rhs)) {
-          std::string newvarname = lhs->__str__() + "_sol";
-          logWarn(*lhs, " rhs term ", *rhs,
-                  " is a number, adding new variable for balancing units ",
-                  newvarname);
-          dimensions[newvarname] =
-              std::make_tuple(targetVarDim, rhs->__str__(), 'd');
-          return SymEngine::parse(newvarname);
+  auto generateUnitConsistantEquation = [&dimensions](
+                                            const SymEngine::RCP<
+                                                const SymEngine::Basic>
+                                                lhs,
+                                            const SymEngine::RCP<
+                                                const SymEngine::Basic> &rhs) {
+    auto targetVarDim = std::get<0>(dimensions[lhs->__str__()]);
+    // Any new varible that is created uses var qualifier of 'd', results in
+    // used when creating variables during cellml serialisation
+    if (SymEngine::is_a_Number(*rhs)) {
+      std::string newvarname = lhs->__str__() + "_sol";
+      logWarn(*lhs, " rhs term ", *rhs,
+              " is a number, adding new variable for balancing units ",
+              newvarname);
+      dimensions[newvarname] =
+          std::make_tuple(targetVarDim, rhs->__str__(), 'd');
+      return SymEngine::parse(newvarname);
+    }
+    if (SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(rhs))) {
+      SymEngine::vec_basic terms;
+      int tctr = 0;
+      for (auto &ccx : SymEngine::expand(rhs)->get_args()) {
+        tctr++;
+        auto ed = getDimensions(ccx, dimensions, 'd');
+        if (targetVarDim != std::get<0>(ed)) {
+          auto nt = SymEngine::div(lhs, ccx);
+          auto ned = getDimensions(nt, dimensions, 'd');
+          std::string newBalanceVar =
+              lhs->__str__() + "_dc" + std::to_string(tctr);
+          logWarn(
+              *lhs, " (", targetVarDim, ") rhs term ", *ccx, " (",
+              std::get<0>(ed),
+              ") does not match dim, adding new variable for balancing units ",
+              newBalanceVar);
+          dimensions[newBalanceVar] =
+              std::make_tuple(std::get<0>(ned), "1", 'd');
+          SymEngine::vec_basic prd;
+          prd.push_back(SymEngine::parse(newBalanceVar));
+          prd.push_back(ccx);
+          terms.push_back(SymEngine::mul(prd));
+        } else {
+          terms.push_back(ccx);
         }
-        if (SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(rhs))) {
-          SymEngine::vec_basic terms;
-          int tctr = 0;
-          for (auto &ccx : SymEngine::expand(rhs)->get_args()) {
-            tctr++;
-            auto ed = getDimensions(ccx, dimensions, 'd');
-            if (targetVarDim != std::get<0>(ed)) {
-              auto nt = SymEngine::div(lhs, ccx);
-              auto ned = getDimensions(nt, dimensions, 'd');
-              std::string newBalanceVar =
-                  lhs->__str__() + "_dc" + std::to_string(tctr);
-              logWarn(*lhs," (",targetVarDim, ") rhs term ", *ccx, " (",std::get<0>(ed),
-                      ") does not match dim, adding new variable for balancing units ", newBalanceVar);
-              dimensions[newBalanceVar] =
-                  std::make_tuple(std::get<0>(ned), "1", 'd');
-              SymEngine::vec_basic prd;
-              prd.push_back(SymEngine::parse(newBalanceVar));
-              prd.push_back(ccx);
-              terms.push_back(SymEngine::mul(prd));
-            } else {
-              terms.push_back(ccx);
-            }
-          }
-          auto newRHS = SymEngine::simplify(SymEngine::add(terms));
-          return newRHS;
-        }
-        if (SymEngine::is_a<SymEngine::Mul>(*rhs)) {
-          SymEngine::vec_basic terms;
-          auto ed = getDimensions(rhs, dimensions, 'd');
-          // std::cout << __LINE__ <<" "<< *lhs << " (" << targetVarDim
-          //           << ") = " << *rhs << " (" << std::get<0>(ed) <<") "<< std::endl;
-          if (targetVarDim != std::get<0>(ed)) {
-            auto nt = SymEngine::div(lhs, rhs);
-            auto ned = getDimensions(nt, dimensions, 'd');
-            std::string newBalanceVar = lhs->__str__() + "_dc";
-            logWarn(*lhs," (",targetVarDim, ") rhs term ", *rhs, " (",std::get<0>(ed), 
-                    ")  does not match dim, adding new variable for balancing units ", newBalanceVar);
-            dimensions[newBalanceVar] =
-                std::make_tuple(std::get<0>(ned), "1", 'd');
+      }
+      auto newRHS = SymEngine::simplify(SymEngine::add(terms));
+      return newRHS;
+    }
+    if (SymEngine::is_a<SymEngine::Mul>(*rhs)) {
+      SymEngine::vec_basic terms;
+      auto ed = getDimensions(rhs, dimensions, 'd');
+      // std::cout << __LINE__ <<" "<< *lhs << " (" << targetVarDim
+      //           << ") = " << *rhs << " (" << std::get<0>(ed) <<") "<<
+      //           std::endl;
+      if (targetVarDim != std::get<0>(ed)) {
+        auto nt = SymEngine::div(lhs, rhs);
+        auto ned = getDimensions(nt, dimensions, 'd');
+        std::string newBalanceVar = lhs->__str__() + "_dc";
+        logWarn(
+            *lhs, " (", targetVarDim, ") rhs term ", *rhs, " (",
+            std::get<0>(ed),
+            ")  does not match dim, adding new variable for balancing units ",
+            newBalanceVar);
+        dimensions[newBalanceVar] = std::make_tuple(std::get<0>(ned), "1", 'd');
 
-            terms.push_back(SymEngine::parse(newBalanceVar));
-            terms.push_back(rhs);
-            return SymEngine::mul(terms);
-          }
-        }
-        return rhs;
-      };
+        terms.push_back(SymEngine::parse(newBalanceVar));
+        terms.push_back(rhs);
+        return SymEngine::mul(terms);
+      }
+    }
+    return rhs;
+  };
 
   std::unordered_map<std::string, unsigned int> uniqueElementNames;
 
@@ -962,10 +970,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     constraints = snf.constraints;
   }
 
-  //Simplify Exp(Log(x)) terms in nonlinear Op
-  for(int nr=0;nr<nonlinearOp.nrows();nr++){
-    if (!SymEngine::eq(*nonlinearOp.get(nr,0), *SymEngine::zero)){
-      nonlinearOp.set(nr,0,SymEngine::simplifyExpLog(nonlinearOp.get(nr,0)));
+  // Simplify Exp(Log(x)) terms in nonlinear Op
+  for (int nr = 0; nr < nonlinearOp.nrows(); nr++) {
+    if (!SymEngine::eq(*nonlinearOp.get(nr, 0), *SymEngine::zero)) {
+      nonlinearOp.set(nr, 0, SymEngine::simplifyExpLog(nonlinearOp.get(nr, 0)));
     }
   }
 
@@ -1214,7 +1222,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   // dimensions);
 }
 
-ComputeEquationResults BondGraph::computeStateEquationNoDim(){
+ComputeEquationResults BondGraph::computeStateEquationNoDim() {
   ComputeEquationResults ceq;
   return ceq;
-} 
+}

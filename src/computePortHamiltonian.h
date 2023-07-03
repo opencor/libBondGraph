@@ -164,10 +164,17 @@ nlohmann::json BondGraph::computePortHamiltonian() {
 
         // Create hamiltonian
         // For computing the Hamiltonian, capacitors have q^2/C, concentrations
-        // have RT q (ln (kq) - 1) This is computed using the observation dW =
-        // integ[ e dq] limits 0 - q The workdone or change in potential energy
-        // due to change in state For capacitors W = Vq; dW = Vdq; dW = (q/C)dq;
-        // integral between 0-q -> q^2/2C
+        // use pseudo hamiltonian approach discussed in "Dissipative
+        // pseudo-Hamiltonian realization of chemical systems using irreversible
+        // thermodynamics", N. Ha Hoang et al, Mathematical and Computer
+        // Modelling of Dynamical Systems Methods, Tools and Applications in
+        // Engineering and Related Sciences Volume 23, 2017 - Issue 2 and "A
+        // unified port-Hamiltonian approach for modelling and stabilizing
+        // control of engineering systems", Ha Ngoc Hoang et al, Vietnam J. Sci.
+        // Technol., vol. 59, no. 1, pp. 96–109, Jan. 2021. This is computed
+        // using the observation dW = integ[ e dq] limits 0 - q The workdone or
+        // change in potential energy due to change in state For capacitors W =
+        // Vq; dW = Vdq; dW = (q/C)dq; integral between 0-q -> q^2/2C
 
         switch (mc->getType()) {
         case eCapacitance:
@@ -191,24 +198,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
               std::get<1>(values[numStates - 1])->name + std::to_string(dofID);
           stateVariables.push_back(state);
           std::string parm = std::get<1>(values[numStates + 2])->name;
-          std::string pR, pT;
-          auto Rv = std::get<1>(values[numStates]);
-          if (Rv->universalConstant) {
-            pR = Rv->name;
-          } else {
-            // This needs to be checked as param names are updated
-            pR = Rv->name + "_" + std::to_string(dofID);
-          }
-          auto Rt = std::get<1>(values[numStates + 1]);
-          if (Rt->universalConstant) {
-            pT = Rt->name;
-          } else {
-            // This needs to be checked as param names are updated
-            pT = Rt->name + "_" + std::to_string(dofID);
-          }
-          // RTq_0(ln(kq_0)−1)
-          std::string energy = pR + "*" + pT + "*" + state + "*(log(" + parm +
-                               "*" + state + ")-1.0)";
+          std::string energy = "(1/2)*(1/" + parm + ")*" + state + "**2";
           parameterDivisor.push_back(SymEngine::parse(parm));
           chemicalStorage.push_back(true);
           hamiltonianString.push_back(energy);
@@ -227,8 +217,6 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           // Use the actual name instead of prefix
           std::string pname = std::get<1>(values[i])->name;
           if (!std::get<1>(values[i])->universalConstant) {
-            // std::cout<<pname<<" ->
-            // "<<std::get<1>(values[i])->prefix+"_of_"+eName<<std::endl;
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
           }
         }
@@ -830,6 +818,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         auto lhs = linearOp.get(xs, offset + xs1);
         if (!SymEngine::eq(*lhs, *SymEngine::zero)) {
           SymEngine::map_basic_basic subt;
+          // Remove parameter as it is set in Q
           subt[parameterDivisor[xs1]] = SymEngine::one;
           linearOp.set(xs, offset + xs1, SymEngine::expand(lhs->subs(subt)));
         }
@@ -847,55 +836,69 @@ nlohmann::json BondGraph::computePortHamiltonian() {
             auto atoms =
                 SymEngine::atoms<SymEngine::FunctionSymbol, SymEngine::Symbol>(
                     *t);
-            if (atoms.find(x[i]) != atoms.end()) {
-              SymEngine::map_basic_basic subt;
-              subt[x[i]] = SymEngine::one;
-              subt[parameterDivisor[i]] = SymEngine::one;
-              auto nexp = SymEngine::expand(t->subs(subt));
-              auto existing = linearOp.get(i, offset + i);
-              SymEngine::vec_basic aterms;
-              aterms.push_back(existing);
-              ss.str("");
-              ss.clear();
-              ss << *nexp << "*ExpRT";
-              aterms.push_back(SymEngine::parse(ss.str()));
-              linearOp.set(i, offset + i, SymEngine::add(aterms));
+            for (int j = 0; j < numStates;
+                 j++) { // Nonlinear op may contain other states too, so insert
+                        // them at the correct columns if found
+              if (atoms.find(x[j]) != atoms.end()) {
+                SymEngine::map_basic_basic subt;
+                subt[x[j]] = SymEngine::one;
+                // Remove parameter as it is set in Q
+                subt[parameterDivisor[j]] = SymEngine::one;
+                auto nexp = SymEngine::expand(t->subs(subt));
+                auto existing = linearOp.get(i, offset + j);
+                SymEngine::vec_basic aterms;
+                aterms.push_back(existing);
+                aterms.push_back(nexp);
+                linearOp.set(i, offset + j, SymEngine::add(aterms));
+              }
             }
           }
         }
       }
     }
-
-    SymEngine::DenseMatrix JR(numStates, numStates);
+    // Given the ode system dx/dt = f(x) + g(x)u
+    // f(x) = M(x)x
+    // In PHS
+    // f(x) = [J(x)-R(x)]*\frac{\partial H}{\partial x}
+    // Then J(x) = 0.5 ( M(x) - M(x)^T )
+    //      R(x) = -0.5 ( M(x) + M(x)^T )
+    SymEngine::DenseMatrix M(numStates, numStates);
     SymEngine::DenseMatrix E(numStates, numStates);
-    SymEngine::eye(E);
+
     for (size_t xs = 0; xs < numStates; xs++) {
       for (size_t xs1 = 0; xs1 < numStates; xs1++) {
-        JR.set(xs, xs1, linearOp.get(xs, xs1 + offset));
+        // Using E as we need to multiply by -1
+        E.set(xs, xs1, linearOp.get(xs, xs1 + offset));
       }
     }
+    // Note that linearOp is setup as dx/dt + f(x) + g(x)u = 0
+    // We need to go to the form dx/dt = -f(x) - g(x)u
+    // So multiple M by -1
+    E.mul_scalar(SymEngine::minus_one, M);
+    // Reset E to identity
+    SymEngine::eye(E);
 
     // Extract J, R and Q matrix
+    SymEngine::DenseMatrix MT(numStates, numStates);
+    M.transpose(MT);
+
     SymEngine::DenseMatrix JR2(numStates, numStates);
     SymEngine::DenseMatrix J(numStates, numStates);
     SymEngine::DenseMatrix R(numStates, numStates);
+
+    // R(x) = -0.5 ( M(x) + M(x)^T )
+    M.add_matrix(MT, JR2);
+    JR2.mul_scalar(SymEngine::parse("-1/2"), R);
+    // J(x) = 0.5 ( M(x) - M(x)^T )
+    MT.mul_scalar(SymEngine::parse("-1"), JR2);
+    M.add_matrix(JR2, MT); // Overwiting MT as it is not used again
+    MT.mul_scalar(SymEngine::parse("1/2"), J);
+
     SymEngine::DenseMatrix Q(numStates, numStates);
     SymEngine::eye(Q);
     for (int ci = 0; ci < numStates; ci++) {
-      if (!chemicalStorage[ci]) {
-        Q.set(ci, ci, SymEngine::div(SymEngine::one, parameterDivisor[ci]));
-      }
+      Q.set(ci, ci, SymEngine::div(SymEngine::one, parameterDivisor[ci]));
     }
-
-    SymEngine::DenseMatrix JRT(numStates, numStates);
-    JR.transpose(JRT);
-    // Symmetric part is (A + A^T)/2
-    JR.add_matrix(JRT, JR2);
-    JR2.mul_scalar(SymEngine::parse("1/2"), R);
-    // Skew symmetric  part is (A - A^T)/2
-    JRT.mul_scalar(SymEngine::parse("-1"), JR2);
-    JR.add_matrix(JR2, JRT);
-    JRT.mul_scalar(SymEngine::parse("1/2"), J);
 
     size_t ucols = mSources.size() == 0 ? 1 : mSources.size();
     SymEngine::DenseMatrix B(numStates, ucols);
@@ -958,11 +961,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     phs["matE"] = to_json(E);
     phs["matQ"] = to_json(Q);
 
-    std::cout << *hmexp << std::endl;
-    std::cout << "J" << std::endl;
-    std::cout << J << std::endl;
-    std::cout << "R" << std::endl;
-    std::cout << R << std::endl;
+    // std::cout << *hmexp << std::endl;
+    // std::cout << "J" << std::endl;
+    // std::cout << J << std::endl;
+    // std::cout << "R" << std::endl;
+    // std::cout << R << std::endl;
+    // std::cout << "Q" << std::endl;
+    // std::cout << Q << std::endl;
 
     result["stateVector"] = to_json(x);
     result["Hderivatives"] = to_json(derivatives);
