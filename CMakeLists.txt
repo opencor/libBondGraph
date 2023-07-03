@@ -44,7 +44,7 @@ set(BG_BOOSTMP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/boostmp_1_77")
 add_subdirectory("${PROJECT_SOURCE_DIR}/src/thirdparty/symengine")
 
 #Eigen library for Port Hamiltonian computation
-set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/eigen/")
+#set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/src/thirdparty/eigen/")
 
 # Link with LLNL units for normal build, use patched version for webassembly
 if(NOT EMSCRIPTEN)
@@ -188,7 +188,7 @@ if(NOT EMSCRIPTEN)
     PRIVATE
     ${CMAKE_CURRENT_BUILD_DIR}
     ${BG_BOOSTMP_INCLUDE_DIR}
-    ${EIGEN_INCLUDE_DIR}
+    #${EIGEN_INCLUDE_DIR}
   )
 
   add_executable(
@@ -299,7 +299,7 @@ else(NOT EMSCRIPTEN)
     PRIVATE
     ${CMAKE_CURRENT_BUILD_DIR}
     ${BG_BOOSTMP_INCLUDE_DIR}
-    ${EIGEN_INCLUDE_DIR}
+    #${EIGEN_INCLUDE_DIR}
   )
 
   target_link_libraries(${PROJECT_NAME}_WASM_LIB PRIVATE teuchos symengine)
@@ -316,7 +316,7 @@ else(NOT EMSCRIPTEN)
     PRIVATE
     ${CMAKE_CURRENT_BUILD_DIR}
     ${BG_BOOSTMP_INCLUDE_DIR}
-    ${EIGEN_INCLUDE_DIR}
+    #${EIGEN_INCLUDE_DIR}
   )
 
   target_link_libraries(${PROJECT_NAME}_WASM ${PROJECT_NAME}_WASM_LIB)

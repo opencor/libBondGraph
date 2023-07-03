@@ -298,6 +298,45 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   auto lC1 = createCapacitor();
   ioBondGraph->addComponent(lC1);
 
+  // Create the inductor
+  auto lL1 = createInductor();
+  ioBondGraph->addComponent(lL1);  
+
+  // Create the resistor
+  auto lR = createResistor();
+  ioBondGraph->addComponent(lR);
+
+  // Create Source
+  auto lSe = createConstantVoltageSource();
+  ioBondGraph->addComponent(lSe);
+
+  // Create the junctions
+  auto lJ1_1 = createOneJunction();
+  ioBondGraph->addComponent(lJ1_1);
+
+  // Create the bonds
+  ioBondGraph->connect(lJ1_1, lR);
+  ioBondGraph->connect(lJ1_1, lC1);
+  ioBondGraph->connect(lJ1_1, lL1);
+  ioBondGraph->connect(lJ1_1, lSe);
+
+  std::cout<<"State space"<<std::endl;
+  auto eqs = ioBondGraph->computeStateEquationNoDim();  
+
+  std::cout << " PHS " << std::endl;
+  nlohmann::json res = ioBondGraph->computePortHamiltonian();
+  std::cout << res.dump() << std::endl;
+  return ioBondGraph;
+}
+
+
+RCPLIB::RCP<BondGraphInterface> rlc2() {
+  auto ioBondGraph = createBondGraph();
+
+  // Create the storage
+  auto lC1 = createCapacitor();
+  ioBondGraph->addComponent(lC1);
+
   auto lC2 = createCapacitor();
   ioBondGraph->addComponent(lC2);
 
@@ -337,6 +376,9 @@ RCPLIB::RCP<BondGraphInterface> rlc() {
   return ioBondGraph;
 }
 
+
+
+
 RCPLIB::RCP<BondGraphInterface> reaction() {
   auto ioBondGraph = createBondGraph();
 
@@ -369,6 +411,7 @@ RCPLIB::RCP<BondGraphInterface> reaction() {
   ioBondGraph->connectInverting(Re, 0, Y_A);
   ioBondGraph->connectInverting(Re, 1, Y_B);
 
+  ioBondGraph->computeStateEquationNoDim();
   std::cout << " Reaction " << std::endl;
   ioBondGraph->computePortHamiltonian();
 
@@ -410,6 +453,7 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
   ioBondGraph->connect(lJ1_A, lC1);
   ioBondGraph->connect(lJ1_B, lC2);
 
+  ioBondGraph->computeStateEquationNoDim();
   std::cout << " eReaction " << std::endl;
   ioBondGraph->computePortHamiltonian();
 
@@ -417,10 +461,10 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 }
 
 int main(int argc, char *argv[]) {
-  // rlc();
-   simpleRCV();
-   reaction();
-   eReaction();
+   rlc();
+  //  simpleRCV();
+  reaction();
+  //eReaction();
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/RC/RCcircuitWUI.json");
@@ -429,7 +473,7 @@ int main(int argc, char *argv[]) {
   //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/DimCheck.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",true);
-  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RC2Units.json");//,
+  //loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RC2Units.json");//,
   //             true);
   return 0;
 }

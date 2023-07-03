@@ -25,54 +25,51 @@
 
 #include "simplifyexplog.h"
 
+// #if defined(_MSC_VER)
+// // Math defines like M_PI_2 are used by eigen, without this MSVC compilation
+// // fails
+// #include <corecrt_math_defines.h>
+// #endif
+// // For computing porthamiltonian
+// // Throw assertion failures as exceptions
+// #define eigen_assert(X) \
+//   do { \
+//     if (!(X)) \
+//       throw BG::BGException(#X); \
+//   } while (false);
+// // make sure Eigen is not included before your define:
+// #include "Eigen/Dense"
+// #include <Eigen/Core>
 
-#if defined(_MSC_VER)
-// Math defines like M_PI_2 are used by eigen, without this MSVC compilation
-// fails
-#include <corecrt_math_defines.h>
-#endif
-// For computing porthamiltonian
-// Throw assertion failures as exceptions
-#define eigen_assert(X)                                                        \
-  do {                                                                         \
-    if (!(X))                                                                  \
-      throw BG::BGException(#X);                                               \
-  } while (false);
-// make sure Eigen is not included before your define:
-#include "Eigen/Dense"
-#include <Eigen/Core>
+// using number = SymEngine::Expression;
+// using SymbolicMatrix = Eigen::MatrixX<number>;
 
-using number = SymEngine::Expression;
-using SymbolicMatrix = Eigen::MatrixX<number>;
+// namespace Eigen {
+// // Dispatch to help with printing
 
-namespace Eigen {
-// Dispatch to help with printing
+// template <>
+// struct NumTraits<SymEngine::Expression>
+//     : GenericNumTraits<SymEngine::Expression> {
+//   enum {
+//     RequireInitialization = 1,
+//     ReadCost = HugeCost,
+//     AddCost = HugeCost,
+//     MulCost = HugeCost
+//   };
 
-template <>
-struct NumTraits<SymEngine::Expression>
-    : GenericNumTraits<SymEngine::Expression> {
-  enum {
-    RequireInitialization = 1,
-    ReadCost = HugeCost,
-    AddCost = HugeCost,
-    MulCost = HugeCost
-  };
+//   EIGEN_CONSTEXPR
+//   static inline int digits10() { return 0; }
 
-  EIGEN_CONSTEXPR
-  static inline int digits10() { return 0; }
+// private:
+//   static inline SymEngine::Expression epsilon();
+//   static inline SymEngine::Expression dummy_precision();
+//   static inline SymEngine::Expression lowest();
+//   static inline SymEngine::Expression highest();
+//   static inline SymEngine::Expression infinity();
+//   static inline SymEngine::Expression quiet_NaN();
+// };
 
-private:
-  static inline SymEngine::Expression epsilon();
-  static inline SymEngine::Expression dummy_precision();
-  static inline SymEngine::Expression lowest();
-  static inline SymEngine::Expression highest();
-  static inline SymEngine::Expression infinity();
-  static inline SymEngine::Expression quiet_NaN();
-};
-
-} // namespace Eigen
-
-
+// } // namespace Eigen
 
 namespace NGraph {
 // Combine graphs
@@ -534,14 +531,16 @@ void BondGraph::removeBond(const RCPLIB::RCP<BondInterface> &inBond) {
   }
   */
 
-  //std::vector<RCPLIB::RCP<BondInterface>>::iterator lBondIter = mBonds.begin();
-  for (auto lBondIter = mBonds.begin(); lBondIter != mBonds.end(); lBondIter++) {
+  // std::vector<RCPLIB::RCP<BondInterface>>::iterator lBondIter =
+  // mBonds.begin();
+  for (auto lBondIter = mBonds.begin(); lBondIter != mBonds.end();
+       lBondIter++) {
     const RCPLIB::RCP<Bond> bi = RCPLIB::rcp_dynamic_cast<Bond>(*lBondIter);
     const RCPLIB::RCP<Bond> ib = RCPLIB::rcp_dynamic_cast<Bond>(inBond);
     if (*bi == *ib) {
       graph->remove_edge((inBond)->getFromPort()->getComponent()->getId(),
                          (inBond)->getToPort()->getComponent()->getId());
-      mBonds.erase(lBondIter);                 
+      mBonds.erase(lBondIter);
       break;
     }
   }
