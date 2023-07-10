@@ -131,7 +131,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
                                             const SymEngine::RCP<
                                                 const SymEngine::Basic> &rhs) {
     auto targetVarDim = std::get<0>(dimensions[lhs->__str__()]);
-    // Any new varible that is created uses var qualifier of 'd', results in
+    // Any new varible that is created uses var qualifier of 'i', results in
     // used when creating variables during cellml serialisation
     if (SymEngine::is_a_Number(*rhs)) {
       std::string newvarname = lhs->__str__() + "_sol";
@@ -139,7 +139,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
               " is a number, adding new variable for balancing units ",
               newvarname);
       dimensions[newvarname] =
-          std::make_tuple(targetVarDim, rhs->__str__(), 'd');
+          std::make_tuple(targetVarDim, rhs->__str__(), 'i');
       return SymEngine::parse(newvarname);
     }
     if (SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(rhs))) {
@@ -147,10 +147,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       int tctr = 0;
       for (auto &ccx : SymEngine::expand(rhs)->get_args()) {
         tctr++;
-        auto ed = getDimensions(ccx, dimensions, 'd');
+        auto ed = getDimensions(ccx, dimensions, 'i');
         if (targetVarDim != std::get<0>(ed)) {
           auto nt = SymEngine::div(lhs, ccx);
-          auto ned = getDimensions(nt, dimensions, 'd');
+          auto ned = getDimensions(nt, dimensions, 'i');
           std::string newBalanceVar =
               lhs->__str__() + "_dc" + std::to_string(tctr);
           logWarn(
@@ -159,7 +159,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
               ") does not match dim, adding new variable for balancing units ",
               newBalanceVar);
           dimensions[newBalanceVar] =
-              std::make_tuple(std::get<0>(ned), "1", 'd');
+              std::make_tuple(std::get<0>(ned), "1", 'i');
           SymEngine::vec_basic prd;
           prd.push_back(SymEngine::parse(newBalanceVar));
           prd.push_back(ccx);
@@ -173,20 +173,20 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     }
     if (SymEngine::is_a<SymEngine::Mul>(*rhs)) {
       SymEngine::vec_basic terms;
-      auto ed = getDimensions(rhs, dimensions, 'd');
+      auto ed = getDimensions(rhs, dimensions, 'i');
       // std::cout << __LINE__ <<" "<< *lhs << " (" << targetVarDim
       //           << ") = " << *rhs << " (" << std::get<0>(ed) <<") "<<
       //           std::endl;
       if (targetVarDim != std::get<0>(ed)) {
         auto nt = SymEngine::div(lhs, rhs);
-        auto ned = getDimensions(nt, dimensions, 'd');
+        auto ned = getDimensions(nt, dimensions, 'i');
         std::string newBalanceVar = lhs->__str__() + "_dc";
         logWarn(
             *lhs, " (", targetVarDim, ") rhs term ", *rhs, " (",
             std::get<0>(ed),
             ")  does not match dim, adding new variable for balancing units ",
             newBalanceVar);
-        dimensions[newBalanceVar] = std::make_tuple(std::get<0>(ned), "1", 'd');
+        dimensions[newBalanceVar] = std::make_tuple(std::get<0>(ned), "1", 'i');
 
         terms.push_back(SymEngine::parse(newBalanceVar));
         terms.push_back(rhs);

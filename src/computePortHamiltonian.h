@@ -57,6 +57,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymEngine::vec_basic f;
     SymEngine::vec_basic x;
     SymEngine::vec_basic u;
+    std::vector<bool> u_orientation;
+
     std::unordered_map<std::string, std::string> nameMap;
     std::unordered_map<std::string, RCPLIB::RCP<const SymEngine::Basic>>
         nonlinearTermSubs;
@@ -72,6 +74,11 @@ nlohmann::json BondGraph::computePortHamiltonian() {
                                            // should be divided by as Derivative
                                            // of Hamiltonian will have it
     std::vector<bool> chemicalStorage;
+    std::unordered_map<std::string, bool>
+        sourceOrientation; // Incident sources are inputs - set to true (1)
+
+    std::unordered_map<std::string, std::string> parametervalues;
+
     // Global dof matrix
     // Count the number of element in each group
     mUcount = 0; // Number of source bonds
@@ -89,6 +96,17 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       auto to = bd->getToPort()->getComponent();
       compIDMap[from->getId()] = from;
       compIDMap[to->getId()] = to;
+      const RCPLIB::RCP<BondGraphElementBase> fc =
+          RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(from);
+      const RCPLIB::RCP<BondGraphElementBase> tc =
+          RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(to);
+
+      if (fc->getComponentGroup() == eU) {
+        sourceOrientation[from->getId()] = true;
+      }
+      if (tc->getComponentGroup() == eU) {
+        sourceOrientation[to->getId()] = false;
+      }
     }
     for (auto &c : mComponents) { // Maintain order
       auto id = c->getId();
@@ -218,6 +236,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string pname = std::get<1>(values[i])->name;
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
+            parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
+                std::get<1>(values[i])->value;
+          } else {
+            parametervalues[pname] = std::get<1>(values[i])->value;
           }
         }
       }
@@ -294,6 +316,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
               SymEngine::parse(pname);
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
+            parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
+                std::get<1>(values[i])->value;
+          } else {
+            parametervalues[pname] = std::get<1>(values[i])->value;
           }
         }
         portHamiltonianCoordinates[dofID] = globalCoordinates;
@@ -339,6 +365,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string pname = std::get<1>(values[i])->name;
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
+            parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
+                std::get<1>(values[i])->value;
+          } else {
+            parametervalues[pname] = std::get<1>(values[i])->value;
           }
         }
       }
@@ -378,10 +408,11 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           ess << std::get<0>(mcValues[pi]) << "_" << dofID;
           // ess << std::get<0>(mcValues[pi]) << "_of_" << eName;
           u.push_back(SymEngine::symbol(ess.str()));
-
+          u_orientation.push_back(sourceOrientation[mc->getId()]);
           auto un = std::get<1>(mcValues[pi])->units;
           auto vn = std::get<1>(mcValues[pi])->value;
-
+          parametervalues[std::get<0>(mcValues[pi]) + "_of_" + eName] =
+              std::get<1>(mcValues[pi])->value;
           nameMap[ess.str()] = std::get<0>(mcValues[pi]) + "_of_" + eName;
         }
         mSources.push_back(mc);
@@ -795,6 +826,41 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     auto System = SymEngine::DenseMatrix(linearOp.nrows(), coordinates.ncols());
     mul_dense_dense(linearOp, coordinates, System);
 
+    // Check if we have a solvable system i.e. a phDAE and not DAE with more
+    // than y algebraic solutions
+
+    for (int i = 0; i < numStates; i++) {
+      auto lhs = System.get(i, 0);
+      auto rhs = nonlinearOp.get(i, 0);
+      if (!SymEngine::eq(*lhs, *SymEngine::zero) ||
+          !SymEngine::eq(*rhs, *SymEngine::zero)) {
+        SymEngine::vec_basic terms;
+        terms.push_back(lhs);
+        terms.push_back(rhs);
+        auto expr = SymEngine::add(terms);
+        // Expression will have both the coordinate and related terms, as lhs is
+        // not always the coordinate values Solve and get the result for the
+        // coordinate
+        // ss.str("");
+        // ss.clear();
+        // ss << *coordinates.get(i, 0);
+        auto variable = coordinates.get(i, 0)->__str__();
+        SymEngine::RCP<const SymEngine::Symbol> csym =
+            SymEngine::symbol(variable);
+        auto solns = SymEngine::solve(expr, csym)->get_args();
+        if (SymEngine::eq(*solns[0], *SymEngine::zero)) {
+          logWarn(*lhs, " + ", *rhs, " gives solution of 0 for ", variable);
+          ss.str("");
+          ss.clear();
+          ss << "State equation " << *lhs << " + " << *rhs
+             << " =0; gives a solution of 0 for " << variable;
+          result["warning"] = ss.str();
+          solvable = false;
+        }
+      }
+    }
+    // The following are solutions for the state variables - can be ignored if
+
     std::ostringstream hms;
     for (auto &e : hamiltonianString) {
       hms << e + " + ";
@@ -902,17 +968,19 @@ nlohmann::json BondGraph::computePortHamiltonian() {
 
     size_t ucols = mSources.size() == 0 ? 1 : mSources.size();
     SymEngine::DenseMatrix B(numStates, ucols);
-    SymEngine::DenseMatrix U(1, numStates);
+    SymEngine::DenseMatrix U(ucols, 1);
     SymEngine::zeros(B);
     SymEngine::zeros(U);
+
     for (size_t xs = 0; xs < numStates; xs++) {
       for (size_t bs = 0; bs < mSources.size(); bs++) {
-        auto entry = linearOp.get(xs, bs + offset + numStates);
-        B.set(xs, bs, entry);
-        if (!SymEngine::eq(*entry, *SymEngine::zero)) {
-          U.set(0, xs, coordinates.get(bs + offset + numStates, 0));
-        }
+        B.set(xs, bs, linearOp.get(xs, bs + offset + numStates));
       }
+    }
+
+    for (size_t bs = 0; bs < mSources.size(); bs++) {
+      // Add numstates as they preceed sources
+      U.set(bs, 0, coordinates.get(bs + offset + numStates, 0));
     }
 
     // Do name mapping
@@ -930,6 +998,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     for (int i = 0; i < R.nrows(); i++) {
       for (int j = 0; j < R.ncols(); j++) {
         R.set(i, j, R.get(i, j)->subs(nameMapSubs));
+      }
+    }
+
+    for (int i = 0; i < B.nrows(); i++) {
+      for (int j = 0; j < B.ncols(); j++) {
+        B.set(i, j, B.get(i, j)->subs(nameMapSubs));
       }
     }
 
@@ -961,6 +1035,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     phs["matE"] = to_json(E);
     phs["matQ"] = to_json(Q);
 
+    // std::cout << coordinates << std::endl;
+    // std::cout << linearOp << std::endl;
     // std::cout << *hmexp << std::endl;
     // std::cout << "J" << std::endl;
     // std::cout << J << std::endl;
@@ -968,6 +1044,20 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     // std::cout << R << std::endl;
     // std::cout << "Q" << std::endl;
     // std::cout << Q << std::endl;
+    {
+      nlohmann::json uorientation;
+      uorientation["cols"] = 1;
+      uorientation["rows"] = u_orientation.size();
+      uorientation["elements"] = u_orientation;
+      phs["u_orientation"] = uorientation;
+    }
+    {
+      nlohmann::json parameterValues;
+      for (const auto &c : parametervalues) {
+        parameterValues[c.first] = c.second;
+      }
+      result["parameter_values"] = parameterValues;
+    }
 
     result["stateVector"] = to_json(x);
     result["Hderivatives"] = to_json(derivatives);
@@ -978,7 +1068,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     result["hamiltonian"] = hs;
 
     result["portHamiltonianMatrices"] = phs;
-    result["success"] = true;
+    result["success"] = solvable;
   } catch (BGException &ex) {
     result["error"] = ex.what();
   } catch (std::runtime_error &e) {

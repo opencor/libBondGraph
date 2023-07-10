@@ -681,6 +681,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       }
     }
     std::string cmeta = cmetass.str();
+
     switch (std::get<2>(var.second)) {
     case 'p': {
       if (cmeta.size() == 0) {
@@ -764,7 +765,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
       }
       break;
     }
-    case 'd': { // Dimension balancing variables
+    case 'i': { // Dimension balancing variables
       cellML << "<variable name=\"" << var.first << "\" units=\"" << unitName
              << "\" initial_value = \"" + std::get<1>(var.second) + "\""
              << " public_interface = \"out\" />";

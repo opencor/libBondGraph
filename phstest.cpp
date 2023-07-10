@@ -452,9 +452,9 @@ RCPLIB::RCP<BondGraphInterface> eReaction() {
 }
 
 int main(int argc, char *argv[]) {
-  rlc();
-  //  simpleRCV();
-  reaction();
+  // rlc();
+  // simpleRCV();
+  // reaction();
   // eReaction();
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/GPCRC/GPCRReactionC.json");
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Demonstration/Demonstration.json");
@@ -465,6 +465,8 @@ int main(int argc, char *argv[]) {
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RLCVI.json",true);
-  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RLCVI.json");
+  loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/"
+              "A_simple_electrical_circuit.json",
+              true);
   return 0;
 }

@@ -734,6 +734,23 @@ symEngineExpressionToString(const RCPLIB::RCP<const SymEngine::Basic> &bs);
 EXPORTED nlohmann::json getSupportedPhysicalDomainsAndFactoryMethods();
 
 /**
+ * @brief Generate a bondgraph from json description of element composition
+ *
+ * @param string - stringified json
+ * @return Managed pointer to BondGraphInterface
+ */
+EXPORTED RCPLIB::RCP<BondGraphInterface> generateBondGraph(std::string bgJson);
+
+/**
+ * @brief Generate port hamiltonian for a bondgraph described in the input json
+ * string
+ *
+ * @param string - stringified json
+ * @return nlohmann::json of the attempt
+ */
+EXPORTED nlohmann::json generatePortHamiltonian(std::string bgJson);
+
+/**
  * @brief Support functions for json translation
  *
  */
