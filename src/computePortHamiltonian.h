@@ -1,4 +1,21 @@
+/*******************************************************************************
 
+Copyright (C) The University of Auckland
+
+OpenCOR is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+OpenCOR is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://gnu.org/licenses>.
+
+*******************************************************************************/
 
 nlohmann::json to_json(const RCPLIB::RCP<const SymEngine::DenseMatrix> &mat) {
   nlohmann::json js;
@@ -58,6 +75,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymEngine::vec_basic x;
     SymEngine::vec_basic u;
     std::vector<bool> u_orientation;
+    std::vector<bool> u_ispotential;
 
     std::unordered_map<std::string, std::string> nameMap;
     std::unordered_map<std::string, RCPLIB::RCP<const SymEngine::Basic>>
@@ -71,13 +89,14 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     std::vector<std::string> hamiltonianString;
     std::vector<std::string> stateVariables;
     SymEngine::vec_basic parameterDivisor; // Parameter by which JR matrix entry
-                                           // should be divided by as Derivative
-                                           // of Hamiltonian will have it
+    // should be divided by as Derivative
+    // of Hamiltonian will have it
     std::vector<bool> chemicalStorage;
     std::unordered_map<std::string, bool>
         sourceOrientation; // Incident sources are inputs - set to true (1)
 
-    std::unordered_map<std::string, std::string> parametervalues;
+    std::unordered_map<std::string, std::tuple<std::string, std::string, char>>
+        parametervalues;
 
     // Global dof matrix
     // Count the number of element in each group
@@ -120,6 +139,97 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     long int dofID = 0;
     int portID = 0;
     std::ostringstream ss, dss, ess, fss, pss;
+
+    auto getPreciseUnitString = [](std::string &uns) {
+      units::precise_unit un = units::unit_from_string(uns);
+      if (un != units::precise::one) {
+        auto mult = un.multiplier();
+        auto baseU = un.base_units();
+        return units::to_string(units::precise_unit(baseU, mult));
+      }
+      return units::to_string(un);
+    };
+
+    auto getPreciseUnitStringPerSecond = [](std::string &uns) {
+      units::precise_unit un = units::unit_from_string(uns);
+      if (un != units::precise::one) {
+        auto mult = un.multiplier();
+        auto baseU = un.base_units();
+        return units::to_string(units::precise_unit(baseU, mult) /
+                                units::precise::second);
+      }
+      return units::to_string(units::precise::hertz);
+    };
+
+    auto generateUnitConsistantEquation =
+        [&dimensions](const SymEngine::RCP<const SymEngine::Basic> lhs,
+                      const SymEngine::RCP<const SymEngine::Basic> &rhs) {
+          auto targetVarDim = std::get<0>(dimensions[lhs->__str__()]);
+          // Any new varible that is created uses var qualifier of 'i', results
+          // in used when creating variables during cellml serialisation
+          if (SymEngine::is_a_Number(*rhs)) {
+            std::string newvarname = lhs->__str__() + "_sol";
+            logWarn(*lhs, " rhs term ", *rhs,
+                    " is a number, adding new variable for balancing units ",
+                    newvarname);
+            dimensions[newvarname] =
+                std::make_tuple(targetVarDim, rhs->__str__(), 'i');
+            return SymEngine::parse(newvarname);
+          }
+          if (SymEngine::is_a<SymEngine::Add>(*SymEngine::expand(rhs))) {
+            SymEngine::vec_basic terms;
+            int tctr = 0;
+            for (auto &ccx : SymEngine::expand(rhs)->get_args()) {
+              tctr++;
+              auto ed = getDimensions(ccx, dimensions, 'i');
+              if (targetVarDim != std::get<0>(ed)) {
+                auto nt = SymEngine::div(lhs, ccx);
+                auto ned = getDimensions(nt, dimensions, 'i');
+                std::string newBalanceVar =
+                    lhs->__str__() + "_dc" + std::to_string(tctr);
+                logWarn(*lhs, " (", targetVarDim, ") rhs term ", *ccx, " (",
+                        std::get<0>(ed),
+                        ") does not match dim, adding new variable for "
+                        "balancing units ",
+                        newBalanceVar);
+                dimensions[newBalanceVar] =
+                    std::make_tuple(std::get<0>(ned), "1", 'i');
+                SymEngine::vec_basic prd;
+                prd.push_back(SymEngine::parse(newBalanceVar));
+                prd.push_back(ccx);
+                terms.push_back(SymEngine::mul(prd));
+              } else {
+                terms.push_back(ccx);
+              }
+            }
+            auto newRHS = SymEngine::simplify(SymEngine::add(terms));
+            return newRHS;
+          }
+          if (SymEngine::is_a<SymEngine::Mul>(*rhs)) {
+            SymEngine::vec_basic terms;
+            auto ed = getDimensions(rhs, dimensions, 'i');
+            // std::cout << __LINE__ <<" "<< *lhs << " (" << targetVarDim
+            //           << ") = " << *rhs << " (" << std::get<0>(ed) <<") "<<
+            //           std::endl;
+            if (targetVarDim != std::get<0>(ed)) {
+              auto nt = SymEngine::div(lhs, rhs);
+              auto ned = getDimensions(nt, dimensions, 'i');
+              std::string newBalanceVar = lhs->__str__() + "_dc";
+              logWarn(*lhs, " (", targetVarDim, ") rhs term ", *rhs, " (",
+                      std::get<0>(ed),
+                      ")  does not match dim, adding new variable for "
+                      "balancing units ",
+                      newBalanceVar);
+              dimensions[newBalanceVar] =
+                  std::make_tuple(std::get<0>(ned), "1", 'i');
+
+              terms.push_back(SymEngine::parse(newBalanceVar));
+              terms.push_back(rhs);
+              return SymEngine::mul(terms);
+            }
+          }
+          return rhs;
+        };
 
     std::unordered_map<std::string, unsigned int> uniqueElementNames;
 
@@ -179,20 +289,22 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         // auto baseU = un.base_units();
         nameMap[ess.str()] = eName + "_" + ess.str();
         nameMap[fss.str()] = eName + "_" + fss.str();
-
+        dimensions[ss.str()] =
+            std::make_tuple(getPreciseUnitString(un), vn, 's');
         // Create hamiltonian
-        // For computing the Hamiltonian, capacitors have q^2/C, concentrations
-        // use pseudo hamiltonian approach discussed in "Dissipative
-        // pseudo-Hamiltonian realization of chemical systems using irreversible
-        // thermodynamics", N. Ha Hoang et al, Mathematical and Computer
-        // Modelling of Dynamical Systems Methods, Tools and Applications in
-        // Engineering and Related Sciences Volume 23, 2017 - Issue 2 and "A
-        // unified port-Hamiltonian approach for modelling and stabilizing
-        // control of engineering systems", Ha Ngoc Hoang et al, Vietnam J. Sci.
-        // Technol., vol. 59, no. 1, pp. 96–109, Jan. 2021. This is computed
-        // using the observation dW = integ[ e dq] limits 0 - q The workdone or
-        // change in potential energy due to change in state For capacitors W =
-        // Vq; dW = Vdq; dW = (q/C)dq; integral between 0-q -> q^2/2C
+        // For computing the Hamiltonian, capacitors have q^2/C,
+        // concentrations use pseudo hamiltonian approach discussed in
+        // "Dissipative pseudo-Hamiltonian realization of chemical systems
+        // using irreversible thermodynamics", N. Ha Hoang et al,
+        // Mathematical and Computer Modelling of Dynamical Systems Methods,
+        // Tools and Applications in Engineering and Related Sciences Volume
+        // 23, 2017 - Issue 2 and "A unified port-Hamiltonian approach for
+        // modelling and stabilizing control of engineering systems", Ha
+        // Ngoc Hoang et al, Vietnam J. Sci. Technol., vol. 59, no. 1, pp.
+        // 96–109, Jan. 2021. This is computed using the observation dW =
+        // integ[ e dq] limits 0 - q The workdone or change in potential
+        // energy due to change in state For capacitors W = Vq; dW = Vdq; dW
+        // = (q/C)dq; integral between 0-q -> q^2/2C
 
         switch (mc->getType()) {
         case eCapacitance:
@@ -231,15 +343,24 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         ++dofID;
         ++mScount;
 
+        // Dimensions for the parameters
         for (int i = mc->getNumStates(); i < values.size(); i++) {
           // Use the actual name instead of prefix
           std::string pname = std::get<1>(values[i])->name;
+          if (dimensions.find(pname) == dimensions.end()) {
+            auto un = std::get<1>(values[i])->units;
+            auto vn = std::get<1>(values[i])->value;
+            dimensions[pname] =
+                std::make_tuple(getPreciseUnitString(un), vn, 'p');
+            // logInfo("Dimensions for parameter ", pname, " = ",
+            // std::get<0>(dimensions[pname]));
+          }
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
             parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
-                std::get<1>(values[i])->value;
+                dimensions[pname];
           } else {
-            parametervalues[pname] = std::get<1>(values[i])->value;
+            parametervalues[pname] = dimensions[pname];
           }
         }
       }
@@ -296,6 +417,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           auto un = std::get<1>(values[st])->units;
           auto vn = std::get<1>(values[st])->value;
 
+          dimensions[ss.str()] =
+              std::make_tuple(getPreciseUnitString(un), vn, 's');
+          // logInfo("Dimensions for state ", ss.str(), " = ",
+          // std::get<0>(dimensions[ss.str()]));
+          // dimensions[dss.str()] =
+          //     std::make_tuple(getPreciseUnitStringPerSecond(un), "0", 'd');
+
           globalCoordinates[SymEngine::parse(stateName)] =
               SymEngine::parse(ss.str());
           globalCoordinates[SymEngine::parse("dot_" + stateName)] =
@@ -314,12 +442,20 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::string pname = std::get<1>(values[i])->name;
           globalCoordinates[SymEngine::parse(std::get<0>(values[i]))] =
               SymEngine::parse(pname);
+          if (dimensions.find(pname) == dimensions.end()) {
+            auto un = std::get<1>(values[i])->units;
+            auto vn = std::get<1>(values[i])->value;
+            dimensions[pname] =
+                std::make_tuple(getPreciseUnitString(un), vn, 'p');
+            // logInfo("Dimensions for parameter ", pname, " = ",
+            // std::get<0>(dimensions[pname]));
+          }
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
             parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
-                std::get<1>(values[i])->value;
+                dimensions[pname];
           } else {
-            parametervalues[pname] = std::get<1>(values[i])->value;
+            parametervalues[pname] = dimensions[pname];
           }
         }
         portHamiltonianCoordinates[dofID] = globalCoordinates;
@@ -363,12 +499,20 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         for (int i = mc->getNumStates(); i < values.size(); i++) {
           // Use the actual name instead of prefix
           std::string pname = std::get<1>(values[i])->name;
+          if (dimensions.find(pname) == dimensions.end()) {
+            auto un = std::get<1>(values[i])->units;
+            auto vn = std::get<1>(values[i])->value;
+            dimensions[pname] =
+                std::make_tuple(getPreciseUnitString(un), vn, 'p');
+            // logInfo("Dimensions for parameter ", pname, " = ",
+            // std::get<0>(dimensions[pname]));
+          }
           if (!std::get<1>(values[i])->universalConstant) {
             nameMap[pname] = std::get<1>(values[i])->prefix + "_of_" + eName;
             parametervalues[std::get<1>(values[i])->prefix + "_of_" + eName] =
-                std::get<1>(values[i])->value;
+                dimensions[pname];
           } else {
-            parametervalues[pname] = std::get<1>(values[i])->value;
+            parametervalues[pname] = dimensions[pname];
           }
         }
       }
@@ -380,6 +524,8 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       // std::string eName = mc->getName();
       if (mc->getComponentGroup() == eU) {
         std::string eName = mc->getVariableName();
+        u_ispotential.push_back(mc_->getType() == ePotentialSource ||
+                                mc_->getType() == bChemostat);
         if (uniqueElementNames.find(eName) != uniqueElementNames.end()) {
           unsigned int ec = uniqueElementNames[eName];
           uniqueElementNames[eName] = ec + 1;
@@ -411,8 +557,17 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           u_orientation.push_back(sourceOrientation[mc->getId()]);
           auto un = std::get<1>(mcValues[pi])->units;
           auto vn = std::get<1>(mcValues[pi])->value;
+
           parametervalues[std::get<0>(mcValues[pi]) + "_of_" + eName] =
-              std::get<1>(mcValues[pi])->value;
+              std::make_tuple(getPreciseUnitString(un), vn, 'c');
+
+          dimensions[ess.str()] =
+              std::make_tuple(getPreciseUnitString(un), vn, 'c');
+          // logInfo("Dimensions for state ", ess.str(), " = ",
+          // std::get<0>(dimensions[ess.str()]));
+          // Control variables have a derivative term
+          // dimensions["dot_" + ess.str()] =
+          //     std::make_tuple(getPreciseUnitStringPerSecond(un), "0", 'c');
           nameMap[ess.str()] = std::get<0>(mcValues[pi]) + "_of_" + eName;
         }
         mSources.push_back(mc);
@@ -498,10 +653,11 @@ nlohmann::json BondGraph::computePortHamiltonian() {
 
     long int di = 0;
     for (auto &c : dofs) {
-      ss.str("");
-      ss.clear();
-      ss << *c;
-      coordinateMap[ss.str()] = di++;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // coordinateMap[ss.str()] = di++;
+      coordinateMap[c->__str__()] = di++;
     }
     std::unordered_map<unsigned int, std::vector<ExpressionTermsMap>> cIndexes;
     for (auto &mc_ : connectedComponents) {
@@ -593,16 +749,17 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     coordinateMap.clear();
     di = 0;
     for (auto &c : dofs) {
-      ss.str("");
-      ss.clear();
-      ss << *c;
-      std::string dofname = ss.str(); // Eliminate memory loss issue
-      coordinateMap[dofname] = di++;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // std::string dofname = ss.str(); // Eliminate memory loss issue
+      // coordinateMap[dofname] = di++;
+      coordinateMap[c->__str__()] = di++;
     }
 
     bool solvable = true; // Flag to check if the equations are solvable.. Some
-                          // incorrect bg formulations will lead to state and
-                          // bond variables being solved to zero
+    // incorrect bg formulations will lead to state and
+    // bond variables being solved to zero
     // - Linear constraints; ie Lx = 0
     // - Nonlinear Constraints Lx + F(x) = 0
     //
@@ -646,7 +803,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     std::vector<std::tuple<int, int, SymEngine::RCP<const SymEngine::Basic>>>
         cv_dict;
     rows = linearOp.nrows(); // Only parse for existing rows, not the ones that
-                             // will be added
+    // will be added
     for (int row = offset; row < rows; row++) {
       auto nonlinear_constraint = nonlinearOp.get(row, 0);
       // Size change during the call so do not allocate outside
@@ -714,11 +871,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       bool secondOrderConstraint = false;
       for (int ci = 0; ci < numStates; ci++) {
         auto c = coordinates.get(ci, 0);
-        ss.str("");
-        ss.clear();
-        ss << *c;
+        // ss.str("");
+        // ss.clear();
+        // ss << *c;
+        // SymEngine::RCP<const SymEngine::Symbol> csym =
+        //     SymEngine::symbol(ss.str());
         SymEngine::RCP<const SymEngine::Symbol> csym =
-            SymEngine::symbol(ss.str());
+            SymEngine::symbol(c->__str__());
         auto ncd = nonlinear_constraint->diff(csym);
         jac_dx.push_back(ncd);
         if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -729,11 +888,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       bool firstOrderJunctionConstraint = false;
       for (int ci = numStates; ci < offset; ci++) {
         auto c = coordinates.get(ci, 0);
-        ss.str("");
-        ss.clear();
-        ss << *c;
+        // ss.str("");
+        // ss.clear();
+        // ss << *c;
+        // SymEngine::RCP<const SymEngine::Symbol> csym =
+        // SymEngine::symbol(ss.str());
         SymEngine::RCP<const SymEngine::Symbol> csym =
-            SymEngine::symbol(ss.str());
+            SymEngine::symbol(c->__str__());
         auto ncd = nonlinear_constraint->diff(csym);
         jac_junction.push_back(ncd);
         if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -744,11 +905,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       bool secondOrderXConstraint = false;
       for (int ci = offset; ci < offset + numStates; ci++) {
         auto c = coordinates.get(ci, 0);
-        ss.str("");
-        ss.clear();
-        ss << *c;
+        // ss.str("");
+        // ss.clear();
+        // ss << *c;
+        // SymEngine::RCP<const SymEngine::Symbol> csym =
+        //     SymEngine::symbol(ss.str());
         SymEngine::RCP<const SymEngine::Symbol> csym =
-            SymEngine::symbol(ss.str());
+            SymEngine::symbol(c->__str__());
         auto ncd = nonlinear_constraint->diff(csym);
         jac_x.push_back(ncd);
         if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -759,11 +922,13 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       bool firstOrderControlConstraint = false;
       for (int ci = offset + numStates; ci < coordinates.nrows(); ci++) {
         auto c = coordinates.get(ci, 0);
-        ss.str("");
-        ss.clear();
-        ss << *c;
+        // ss.str("");
+        // ss.clear();
+        // ss << *c;
+        // SymEngine::RCP<const SymEngine::Symbol> csym =
+        //     SymEngine::symbol(ss.str());
         SymEngine::RCP<const SymEngine::Symbol> csym =
-            SymEngine::symbol(ss.str());
+            SymEngine::symbol(c->__str__());
         auto ncd = nonlinear_constraint->diff(csym);
         jac_cv.push_back(ncd);
         if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -786,10 +951,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
           std::map<long int, SymEngine::RCP<const SymEngine::Basic>> ld;
           SymEngine::RCP<const SymEngine::Basic> nl;
           SymEngine::map_basic_basic dummy;
-          ss.str("");
-          ss.clear();
-          ss << *num;
-          std::string numer = ss.str();
+          // ss.str("");
+          // ss.clear();
+          // ss << *num;
+          std::string numer = num->__str__();
           std::tie(ld, nl) = getLinearCoefficientsAndNonlinearTerms(
               numer, coordinateMap, dummy);
           for (auto &kv : ld) {
@@ -904,7 +1069,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
                     *t);
             for (int j = 0; j < numStates;
                  j++) { // Nonlinear op may contain other states too, so insert
-                        // them at the correct columns if found
+              // them at the correct columns if found
               if (atoms.find(x[j]) != atoms.end()) {
                 SymEngine::map_basic_basic subt;
                 subt[x[j]] = SymEngine::one;
@@ -922,6 +1087,12 @@ nlohmann::json BondGraph::computePortHamiltonian() {
         }
       }
     }
+    // Do name mapping
+    SymEngine::map_basic_basic nameMapSubs;
+    for (auto &c : nameMap) {
+      nameMapSubs[SymEngine::symbol(c.first)] = SymEngine::symbol(c.second);
+    }
+
     // Given the ode system dx/dt = f(x) + g(x)u
     // f(x) = M(x)x
     // In PHS
@@ -934,7 +1105,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     for (size_t xs = 0; xs < numStates; xs++) {
       for (size_t xs1 = 0; xs1 < numStates; xs1++) {
         // Using E as we need to multiply by -1
-        E.set(xs, xs1, linearOp.get(xs, xs1 + offset));
+        E.set(xs, xs1,
+              SymEngine::simplify(
+                  SymEngine::expand(linearOp.get(xs, xs1 + offset)))
+                  ->subs(nameMapSubs));
       }
     }
     // Note that linearOp is setup as dx/dt + f(x) + g(x)u = 0
@@ -963,7 +1137,10 @@ nlohmann::json BondGraph::computePortHamiltonian() {
     SymEngine::DenseMatrix Q(numStates, numStates);
     SymEngine::eye(Q);
     for (int ci = 0; ci < numStates; ci++) {
-      Q.set(ci, ci, SymEngine::div(SymEngine::one, parameterDivisor[ci]));
+      Q.set(ci, ci,
+            SymEngine::simplify(
+                SymEngine::div(SymEngine::one, parameterDivisor[ci]))
+                ->subs(nameMapSubs));
     }
 
     size_t ucols = mSources.size() == 0 ? 1 : mSources.size();
@@ -974,7 +1151,9 @@ nlohmann::json BondGraph::computePortHamiltonian() {
 
     for (size_t xs = 0; xs < numStates; xs++) {
       for (size_t bs = 0; bs < mSources.size(); bs++) {
-        B.set(xs, bs, linearOp.get(xs, bs + offset + numStates));
+        B.set(xs, bs,
+              SymEngine::simplify(SymEngine::expand(
+                  linearOp.get(xs, bs + offset + numStates))));
       }
     }
 
@@ -983,33 +1162,35 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       U.set(bs, 0, coordinates.get(bs + offset + numStates, 0));
     }
 
-    // Do name mapping
-    SymEngine::map_basic_basic nameMapSubs;
-    for (auto &c : nameMap) {
-      nameMapSubs[SymEngine::symbol(c.first)] = SymEngine::symbol(c.second);
-    }
-
     for (int i = 0; i < J.nrows(); i++) {
       for (int j = 0; j < J.ncols(); j++) {
-        J.set(i, j, J.get(i, j)->subs(nameMapSubs));
+        J.set(i, j,
+              SymEngine::simplify(
+                  SymEngine::expand(J.get(i, j)->subs(nameMapSubs))));
       }
     }
 
     for (int i = 0; i < R.nrows(); i++) {
       for (int j = 0; j < R.ncols(); j++) {
-        R.set(i, j, R.get(i, j)->subs(nameMapSubs));
+        R.set(i, j,
+              SymEngine::simplify(
+                  SymEngine::expand(R.get(i, j)->subs(nameMapSubs))));
       }
     }
 
     for (int i = 0; i < B.nrows(); i++) {
       for (int j = 0; j < B.ncols(); j++) {
-        B.set(i, j, B.get(i, j)->subs(nameMapSubs));
+        B.set(i, j,
+              SymEngine::simplify(
+                  SymEngine::expand(B.get(i, j)->subs(nameMapSubs))));
       }
     }
 
     for (int i = 0; i < U.nrows(); i++) {
       for (int j = 0; j < U.ncols(); j++) {
-        U.set(i, j, U.get(i, j)->subs(nameMapSubs));
+        U.set(i, j,
+              SymEngine::simplify(
+                  SymEngine::expand(U.get(i, j)->subs(nameMapSubs))));
       }
     }
 
@@ -1019,11 +1200,19 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       }
     }
 
+    nlohmann::json stateValues;
     for (int i = 0; i < x.size(); i++) {
+      auto xname = x[i]->__str__(); // dimensions has original name
       x[i] = x[i]->subs(nameMapSubs);
-    }
 
-    hmexp->subs(nameMapSubs);
+      nlohmann::json initialValue;
+      initialValue["value"] = std::get<1>(dimensions[xname]);
+      initialValue["units"] = std::get<0>(dimensions[xname]);
+      stateValues[x[i]->__str__()] = initialValue;
+    }
+    result["state_values"] = stateValues;
+
+    // hmexp->subs(nameMapSubs);
 
     // Completed NameMap
 
@@ -1050,18 +1239,26 @@ nlohmann::json BondGraph::computePortHamiltonian() {
       uorientation["rows"] = u_orientation.size();
       uorientation["elements"] = u_orientation;
       phs["u_orientation"] = uorientation;
+      nlohmann::json upotentialtype;
+      upotentialtype["cols"] = 1;
+      upotentialtype["rows"] = u_ispotential.size();
+      upotentialtype["elements"] = u_ispotential;
+      phs["u_ispotential"] = upotentialtype;
     }
     {
       nlohmann::json parameterValues;
       for (const auto &c : parametervalues) {
-        parameterValues[c.first] = c.second;
+        nlohmann::json parameter;
+        parameter["value"] = std::get<1>(c.second);
+        parameter["units"] = std::get<0>(c.second);
+        parameterValues[c.first] = parameter;
       }
       result["parameter_values"] = parameterValues;
     }
 
     result["stateVector"] = to_json(x);
     result["Hderivatives"] = to_json(derivatives);
-    result["hamiltonianLatex"] = SymEngine::latex(*hmexp);
+    result["hamiltonianLatex"] = SymEngine::latex(*(hmexp->subs(nameMapSubs)));
     std::string hs = hmString.substr(0, hmString.size() - 3);
     hs = replaceAll(hs, "**", "^");
     hs.erase(std::remove(hs.begin(), hs.end(), '*'), hs.end());
@@ -1074,6 +1271,7 @@ nlohmann::json BondGraph::computePortHamiltonian() {
   } catch (std::runtime_error &e) {
     result["error"] = e.what();
   }
+
   // std::cout << result.dump(2) << std::endl;
   return result;
 }

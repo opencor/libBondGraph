@@ -37,7 +37,7 @@ namespace BG {
 
 /**
 Source JSON used to define domains and factoryMethods
-//Generated on 10 June, 2023 22:59:58
+//Generated on 11 July, 2023 11:53:33
 
 {
     "Annotation": {
@@ -568,7 +568,7 @@ Source JSON used to define domains and factoryMethods
         "Capacitance": {
             "class": "passive",
             "constitutive_relations": [
-                "x_0 - k * e_0",
+                "x_0 - e_0/k",
                 "dot_x_0 - f_0"
             ],
             "description": "Linear Elastic Spring",
@@ -610,7 +610,7 @@ Source JSON used to define domains and factoryMethods
         "Inductance": {
             "class": "passive",
             "constitutive_relations": [
-                "p_0 - I*f_0",
+                "p_0 - m*f_0",
                 "dot_p_0 - e_0"
             ],
             "description": "Mass",

@@ -150,7 +150,7 @@
           }
         },
         "constitutive_relations": [
-          "x_0 - k * e_0",
+          "x_0 - e_0/k",
           "dot_x_0 - f_0"
         ]
       },
@@ -175,7 +175,7 @@
           }
         },
         "constitutive_relations": [
-          "p_0 - I*f_0",
+          "p_0 - m*f_0",
           "dot_p_0 - e_0"
         ]
       },

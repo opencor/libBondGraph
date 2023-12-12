@@ -136,7 +136,7 @@ RCPLIB::RCP<BGElement> createLinearSpring(const RCPLIB::RCP< BGElementData > &pr
     RCPLIB::RCP<Value> parameter0 = RCPLIB::rcp(new Value("k", "1"));
     ptr->mParameter.push_back(parameter0);
     parameter0->units = units::to_string(units::unit_from_string("N/m"));
-    ptr->constitutiveEq.push_back("x_0 - k * e_0");
+    ptr->constitutiveEq.push_back("x_0 - e_0/k");
     ptr->constitutiveEqIndex.push_back(-1);  
     ptr->constitutiveEq.push_back("dot_x_0 - f_0");
     ptr->constitutiveEqIndex.push_back(-1);  
@@ -161,7 +161,7 @@ RCPLIB::RCP<BGElement> createMass(const RCPLIB::RCP< BGElementData > &proxy){
     RCPLIB::RCP<Value> parameter0 = RCPLIB::rcp(new Value("m", "1"));
     ptr->mParameter.push_back(parameter0);
     parameter0->units = units::to_string(units::unit_from_string("kg"));
-    ptr->constitutiveEq.push_back("p_0 - I*f_0");
+    ptr->constitutiveEq.push_back("p_0 - m*f_0");
     ptr->constitutiveEqIndex.push_back(-1);  
     ptr->constitutiveEq.push_back("dot_p_0 - e_0");
     ptr->constitutiveEqIndex.push_back(-1);  

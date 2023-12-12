@@ -590,10 +590,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
 
   long int di = 0;
   for (auto &c : dofs) {
-    ss.str("");
-    ss.clear();
-    ss << *c;
-    coordinateMap[ss.str()] = di++;
+    // ss.str("");
+    // ss.clear();
+    // ss << *c;
+    coordinateMap[c->__str__()] = di++;
   }
   std::unordered_map<unsigned int, std::vector<ExpressionTermsMap>> cIndexes;
   for (auto &mc_ : connectedComponents) {
@@ -739,10 +739,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   coordinateMap.clear();
   di = 0;
   for (auto &c : dofs) {
-    ss.str("");
-    ss.clear();
-    ss << *c;
-    std::string dofname = ss.str(); // Eliminate memory loss issue
+    // ss.str("");
+    // ss.clear();
+    // ss << *c;
+    std::string dofname = c->__str__(); // Eliminate memory loss issue
     coordinateMap[dofname] = di++;
   }
 
@@ -869,11 +869,13 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     bool secondOrderConstraint = false;
     for (int ci = 0; ci < numStates; ci++) {
       auto c = coordinates.get(ci, 0);
-      ss.str("");
-      ss.clear();
-      ss << *c;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // SymEngine::RCP<const SymEngine::Symbol> csym =
+      //     SymEngine::symbol(ss.str());
       SymEngine::RCP<const SymEngine::Symbol> csym =
-          SymEngine::symbol(ss.str());
+          SymEngine::symbol(c->__str__());
       auto ncd = nonlinear_constraint->diff(csym);
       jac_dx.push_back(ncd);
       if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -884,11 +886,13 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     bool firstOrderJunctionConstraint = false;
     for (int ci = numStates; ci < offset; ci++) {
       auto c = coordinates.get(ci, 0);
-      ss.str("");
-      ss.clear();
-      ss << *c;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // SymEngine::RCP<const SymEngine::Symbol> csym =
+      //     SymEngine::symbol(ss.str());
       SymEngine::RCP<const SymEngine::Symbol> csym =
-          SymEngine::symbol(ss.str());
+          SymEngine::symbol(c->__str__());
       auto ncd = nonlinear_constraint->diff(csym);
       jac_junction.push_back(ncd);
       if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -899,11 +903,13 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     bool secondOrderXConstraint = false;
     for (int ci = offset; ci < offset + numStates; ci++) {
       auto c = coordinates.get(ci, 0);
-      ss.str("");
-      ss.clear();
-      ss << *c;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // SymEngine::RCP<const SymEngine::Symbol> csym =
+      //     SymEngine::symbol(ss.str());
       SymEngine::RCP<const SymEngine::Symbol> csym =
-          SymEngine::symbol(ss.str());
+          SymEngine::symbol(c->__str__());
       auto ncd = nonlinear_constraint->diff(csym);
       jac_x.push_back(ncd);
       if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -914,11 +920,13 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     bool firstOrderControlConstraint = false;
     for (int ci = offset + numStates; ci < coordinates.nrows(); ci++) {
       auto c = coordinates.get(ci, 0);
-      ss.str("");
-      ss.clear();
-      ss << *c;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
+      // SymEngine::RCP<const SymEngine::Symbol> csym =
+      //     SymEngine::symbol(ss.str());
       SymEngine::RCP<const SymEngine::Symbol> csym =
-          SymEngine::symbol(ss.str());
+          SymEngine::symbol(c->__str__());
       auto ncd = nonlinear_constraint->diff(csym);
       jac_cv.push_back(ncd);
       if (!SymEngine::eq(*ncd, *SymEngine::zero)) {
@@ -941,10 +949,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
         std::map<long int, SymEngine::RCP<const SymEngine::Basic>> ld;
         SymEngine::RCP<const SymEngine::Basic> nl;
         SymEngine::map_basic_basic dummy;
-        ss.str("");
-        ss.clear();
-        ss << *num;
-        std::string numer = ss.str();
+        // ss.str("");
+        // ss.clear();
+        // ss << *num;
+        std::string numer = num->__str__();
         std::tie(ld, nl) =
             getLinearCoefficientsAndNonlinearTerms(numer, coordinateMap, dummy);
         for (auto &kv : ld) {
@@ -1010,10 +1018,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       // Expression will have both the coordinate and related terms, as lhs is
       // not always the coordinate values Solve and get the result for the
       // coordinate
-      ss.str("");
-      ss.clear();
-      ss << *coordinates.get(i, 0);
-      auto variable = ss.str();
+      // ss.str("");
+      // ss.clear();
+      // ss << *coordinates.get(i, 0);
+      auto variable = coordinates.get(i, 0)->__str__();
       SymEngine::RCP<const SymEngine::Symbol> csym =
           SymEngine::symbol(variable);
       auto solns = SymEngine::solve(expr, csym)->get_args();
@@ -1046,10 +1054,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       // Expression will have both the coordinate and related terms, as lhs is
       // not always the coordinate values Solve and get the result for the
       // coordinate
-      ss.str("");
-      ss.clear();
-      ss << *coordinates.get(i, 0);
-      auto variable = ss.str();
+      // ss.str("");
+      // ss.clear();
+      // ss << *coordinates.get(i, 0);
+      auto variable = coordinates.get(i, 0)->__str__();
       SymEngine::RCP<const SymEngine::Symbol> csym =
           SymEngine::symbol(variable);
       auto solns = SymEngine::solve(expr, csym)->get_args();
@@ -1084,10 +1092,10 @@ ComputeEquationResults BondGraph::computeStateEquation() {
       // Expression will have both the coordinate and related terms, as lhs is
       // not always the coordinate values Solve and get the result for the
       // coordinate
-      ss.str("");
-      ss.clear();
-      ss << *coordinates.get(i, 0);
-      auto variable = ss.str();
+      // ss.str("");
+      // ss.clear();
+      // ss << *coordinates.get(i, 0);
+      auto variable = coordinates.get(i, 0)->__str__();
       SymEngine::RCP<const SymEngine::Symbol> csym =
           SymEngine::symbol(variable);
       auto solns = SymEngine::solve(expr, csym)->get_args();
@@ -1116,11 +1124,11 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     auto cons = constraints[i];
     bool removeCons = false;
     for (int j = 0; j < numStates; j++) {
-      ss.str("");
-      ss.clear();
-      ss << *coordinates.get(j, 0);
+      // ss.str("");
+      // ss.clear();
+      // ss << *coordinates.get(j, 0);
       SymEngine::RCP<const SymEngine::Symbol> csym =
-          SymEngine::symbol(ss.str());
+          SymEngine::symbol(coordinates.get(i, 0)->__str__());
       auto solns = SymEngine::solve(cons, csym)->get_args();
       if (solns.size() > 0) {
         // equations[coordinates.get(j, 0)] = SymEngine::expand(solns[0]);
@@ -1152,6 +1160,7 @@ ComputeEquationResults BondGraph::computeStateEquation() {
     std::string subn = c.second;
     subn = replaceAll(subn, "___", "_");
     subn = replaceAll(subn, "__", "_");
+    subn = replaceAll(subn, "_^", "^");
     if (subn[subn.size() - 1] == '_') {
       subn = subn.substr(0, subn.size() - 1);
     }
@@ -1220,9 +1229,4 @@ ComputeEquationResults BondGraph::computeStateEquation() {
   return results;
   // return std::make_tuple(solvable, equations, bondEquations, minConstraints,
   // dimensions);
-}
-
-ComputeEquationResults BondGraph::computeStateEquationNoDim() {
-  ComputeEquationResults ceq;
-  return ceq;
 }

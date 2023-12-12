@@ -515,12 +515,12 @@ inline SymEngine::RCP<const SymEngine::Basic>
 substituteValues(SymEngine::RCP<const SymEngine::Basic> &expr,
                  SymEngine::map_basic_basic &substitutions) {
   auto sexpr = SymEngine::expand(expr->subs(substitutions));
-  std::ostringstream ss;
-  // Hack, as symengine currently (May 2021) does not provide simplify
-  // Replace log(exp(*)) or exp(log(*)) by ()
-  ss << *sexpr;
-  auto expString = ss.str();
-  auto nExpr = SymEngine::simplify(SymEngine::parse(expString));
+  // std::ostringstream ss;
+  // // Hack, as symengine currently (May 2021) does not provide simplify
+  // // Replace log(exp(*)) or exp(log(*)) by ()
+  // ss << *sexpr;
+  // auto expString = ss.str();
+  auto nExpr = SymEngine::simplify(SymEngine::parse(sexpr->__str__()));
   return nExpr;
 }
 
@@ -653,10 +653,10 @@ SmithNormalForm process_constraints(SmithNormalForm &ops,
       if (s_atoms.size() == 1) {
         // Dont know how to convert basic to symbol
         auto ab = *(s_atoms.begin());
-        ss.str("");
-        ss.clear();
-        ss << *ab;
-        auto atms = SymEngine::symbol(ss.str());
+        // ss.str("");
+        // ss.clear();
+        // ss << *ab;
+        auto atms = SymEngine::symbol(ab->__str__());
         try {
           auto solns = SymEngine::solve(constraint, atms)->get_args();
           if (solns.size() == 1) {
@@ -688,10 +688,10 @@ SmithNormalForm process_constraints(SmithNormalForm &ops,
       SymEngine::vec_basic partials;
       for (int ix_ = 0; ix_ < numCoords; ix_++) {
         auto c = coordinates.get(ix_, 0);
-        ss.str("");
-        ss.clear();
-        ss << *c;
-        auto cs = SymEngine::symbol(ss.str());
+        // ss.str("");
+        // ss.clear();
+        // ss << *c;
+        auto cs = SymEngine::symbol(c->__str__());
         auto cdiff = constraint->diff(cs);
         partials.push_back(cdiff);
       }
@@ -819,21 +819,20 @@ std::tuple<std::string, std::string, char> getDimensions(
     std::ostringstream ss;
     auto equation = SymEngine::eliminateExpLog(eq);
     auto atoms = SymEngine::atoms<SymEngine::FunctionSymbol, SymEngine::Symbol>(
-         *equation);
-
+        *equation);
 
     SymEngine::map_basic_basic subs;
     for (auto c : atoms) {
-      ss.str("");
-      ss.clear();
-      ss << *c;
+      // ss.str("");
+      // ss.clear();
+      // ss << *c;
 
-      auto dim = std::get<0>(dimensions[ss.str()]);
+      auto dim = std::get<0>(dimensions[c->__str__()]);
       if (dim != "") { // Handle dimensionless entities
         try {
           subs[c] = SymEngine::parse(dim);
         } catch (std::exception &e) {
-          logWarn("Failed to find dimensions for ", ss.str(), dim);
+          logWarn("Failed to find dimensions for ", c->__str__(), dim);
         }
       } else {
         subs[c] = SymEngine::parse("1.0");
@@ -841,17 +840,17 @@ std::tuple<std::string, std::string, char> getDimensions(
     }
 
     auto res = SymEngine::simplify(equation->subs(subs));
-    ss.str("");
-    ss.clear();
-    ss << *res;
-    std::string expString = ss.str();
+    // ss.str("");
+    // ss.clear();
+    // ss << *res;
+    std::string expString = res->__str__();
     // Some symbols like I are not reported by atoms
-    expString = replaceAll(expString,"I","1");
-    ss.str("");
-    ss.clear();
+    expString = replaceAll(expString, "I", "1");
+    // ss.str("");
+    // ss.clear();
     auto rr = SymEngine::simplify(SymEngine::parse(expString));
-    ss << *rr;
-    expString = ss.str();
+    // ss << *rr;
+    expString = rr->__str__();
 
     // Units doesnt seem to handle expressions that start with a negative sign
     // Hack to handle this

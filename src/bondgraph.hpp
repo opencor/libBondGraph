@@ -452,8 +452,6 @@ public:
    */
   virtual ComputeEquationResults computeStateEquation() = 0;
 
-  virtual ComputeEquationResults computeStateEquationNoDim() = 0;
-
   /**
    * @brief Compute the Port Hamiltonian of the bondgraph
    */

@@ -282,6 +282,8 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
   // std::tie(solvable, equations, bondEquations, constraints, dimensions) =
   // bgequations; Find equations whose lhs has dot_
   std::unordered_map<std::string, std::string> derivatives;
+  std::vector<std::string> stateVariableNames; // Used to report unsolved state
+                                               // vars when constraints exist
   for (auto eq : equations) {
     cellML.str("");
     cellML.clear();
@@ -289,6 +291,7 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     std::string variable = cellML.str();
     if (variable.rfind("dot_", 0) == 0) {
       derivatives[variable.substr(4)] = variable;
+      stateVariableNames.push_back(variable.substr(4));
     }
   }
   cellML.str("");
@@ -686,11 +689,11 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     case 'p': {
       if (cmeta.size() == 0) {
         cellML << "<variable name=\"" << var.first << "\" units=\"" << unitName
-               << "\" public_interface = \"in\" />";
+               << "\" private_interface = \"in\" />";
       } else {
         cellML << "<variable cmeta:id=\"" << cmeta << "\" name=\"" << var.first
                << "\" units=\"" << unitName
-               << "\" public_interface = \"in\" "
+               << "\" private_interface = \"in\" "
                   " xmlns:cmeta=\"http://www.cellml.org/metadata/1.0#\" />";
       }
       break;
@@ -794,12 +797,37 @@ getCellML(std::string modelName_, const RCPLIB::RCP<BondGraphInterface> &host_,
     cellML << expr << std::endl;
   }
   // Create Constraint equations
+  files["hasconstraints"] = "{}";
   if (constraints.size() > 0) {
     cellML << "<!--Constraint equations -->" << std::endl;
     std::vector<std::string> consEqMathML = getMathML(constraints);
     for (auto expr : consEqMathML) {
+      cellML << "<!--" << std::endl;
       cellML << expr << std::endl;
+      cellML << "-->" << std::endl;
     }
+    std::vector<std::string> unsolvedStateVar;
+    std::vector<std::string> strCons;
+    for (auto expr : constraints) {
+      auto syms = SymEngine::free_symbols(*expr);
+      strCons.push_back(expr->__str__());
+      for (auto vr : syms) {
+        std::string vrs = vr->__str__();
+        if (std::find(stateVariableNames.begin(), stateVariableNames.end(),
+                      vrs) != stateVariableNames.end()) {
+          // std::cout << "State variable " << vrs << std::endl;
+          unsolvedStateVar.push_back(vrs);
+        }
+        // else {
+        //   // std::cout << "Non state variable " << vrs << std::endl;
+        // }
+      }
+    }
+    nlohmann::json cdes;
+    cdes["numconstraints"] = constraints.size();
+    cdes["affectedStateVariables"] = unsolvedStateVar;
+    cdes["constraints"] = strCons;
+    files["hasconstraints"] = cdes.dump();
   }
 
   std::vector<std::string> stateEqMathML = getMathML(equations);

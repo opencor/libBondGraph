@@ -465,8 +465,11 @@ int main(int argc, char *argv[]) {
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Memristor.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/Composite.json",true);
   // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/RLCVI.json",true);
+  // loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/"
+  //             "A_simple_electrical_circuit.json",
+  //             true);
   loadProject("/mnt/d/GithubRepositories/BGUITest/Examples/Test/"
-              "A_simple_electrical_circuit.json",
+              "Calcium_binding_to_troponin-C.json",
               true);
   return 0;
 }
