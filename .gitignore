@@ -1,0 +1,7 @@
+install*
+build*
+emsdk*
+unitproxy_truc
+.vscode/settings.json
+.vscode/launch.json
+.pdb

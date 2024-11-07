@@ -1,0 +1,633 @@
+{
+  "ElementDefinitions": {
+    "Electrical": {
+      "location": 2,
+      "Resistance": {
+        "description": "Linear Resistor",
+        "name": "Resistor",
+        "shortname": "R",
+        "variableprefix": "R",
+        "class": "passive",
+        "parameters": {
+          "r": {
+            "description": "Resistance",
+            "dimension": "Ohm",
+            "universalConstant": false,
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 - f_0*r"
+        ]
+      },
+      "Capacitance": {
+        "description": "Linear Capacitor",
+        "name": "Capacitor",
+        "shortname": "C",
+        "variableprefix": "C",
+        "class": "passive",
+        "parameters": {
+          "C": {
+            "description": "Capacitance",
+            "dimension": "Farad",
+            "value": 1
+          }
+        },
+        "states": {
+          "q_0": {
+            "description": "Electric charge",
+            "dimension": "coulomb",
+            "value": 0
+          }
+        },
+        "constitutive_relations": [
+          "q_0 - C * e_0",
+          "dot_q_0 - f_0"
+        ]
+      },
+      "Inductance": {
+        "description": "Linear Inductor",
+        "name": "Inductor",
+        "shortname": "I",
+        "variableprefix": "I",
+        "class": "passive",
+        "states": {
+          "p_0": {
+            "description": "Magetic flux",
+            "dimension": "weber",
+            "value": 0
+          }
+        },
+        "parameters": {
+          "L": {
+            "description": "Inductance",
+            "dimension": "henry",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "p_0 - L*f_0",
+          "dot_p_0 - e_0"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantVoltageSource",
+        "description": "Constant Voltage Source",
+        "shortname": "Se",
+        "variableprefix": "Se",
+        "class": "passive",
+        "parameters": {
+          "u": {
+            "description": "Voltage",
+            "dimension": "V",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -u"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantCurrentSource",
+        "description": "Constant Current Source",
+        "shortname": "Sf",
+        "variableprefix": "Sf",
+        "class": "passive",
+        "parameters": {
+          "i": {
+            "description": "Current",
+            "dimension": "A",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+i"
+        ]
+      },
+      "BondDimensions": {
+        "effort": "V",
+        "flow": "A"
+      }
+    },
+    "Mechanical": {
+      "location": 4,
+      "Resistance": {
+        "description": "Linear damping",
+        "name": "LinearDamper",
+        "shortname": "R",
+        "variableprefix": "R",
+        "class": "passive",
+        "parameters": {
+          "r": {
+            "description": "Damping",
+            "dimension": "N*s/m",
+            "universalConstant": false,
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 - f_0*r"
+        ]
+      },
+      "Capacitance": {
+        "description": "Linear Elastic Spring",
+        "name": "LinearSpring",
+        "shortname": "k",
+        "variableprefix": "k",
+        "class": "passive",
+        "parameters": {
+          "k": {
+            "description": "Stiffness",
+            "dimension": "N/m",
+            "value": 1
+          }
+        },
+        "states": {
+          "x_0": {
+            "description": "Displacement",
+            "dimension": "m",
+            "value": 0
+          }
+        },
+        "constitutive_relations": [
+          "x_0 - e_0/k",
+          "dot_x_0 - f_0"
+        ]
+      },
+      "Inductance": {
+        "description": "Mass",
+        "name": "Mass",
+        "shortname": "I",
+        "variableprefix": "I",
+        "class": "passive",
+        "states": {
+          "p_0": {
+            "description": "Linear Momentum",
+            "dimension": "kg*m/s",
+            "value": 0
+          }
+        },
+        "parameters": {
+          "m": {
+            "description": "Mass",
+            "dimension": "kg",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "p_0 - m*f_0",
+          "dot_p_0 - e_0"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantForce",
+        "description": "Constant Point Force",
+        "shortname": "F",
+        "variableprefix": "F",
+        "class": "passive",
+        "parameters": {
+          "f": {
+            "description": "force",
+            "dimension": "N",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -f"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantVelocity",
+        "description": "Constant Linear Velocity",
+        "shortname": "v",
+        "variableprefix": "v",
+        "class": "passive",
+        "parameters": {
+          "v": {
+            "description": "Velocity",
+            "dimension": "m/s",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+v"
+        ]
+      },
+      "BondDimensions": {
+        "effort": "N",
+        "flow": "m/s"
+      }
+    },
+    "Hydraulic": {
+      "location": 2,
+      "Resistance": {
+        "description": "Viscous Resistance",
+        "name": "ViscousResistance",
+        "shortname": "R",
+        "variableprefix": "R",
+        "class": "passive",
+        "parameters": {
+          "r": {
+            "description": "Resistance",
+            "dimension": "J*s/m^6",
+            "universalConstant": false,
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 - f_0*r"
+        ]
+      },
+      "Capacitance": {
+        "description": "Vessal wall compliance",
+        "name": "FluidCompliance",
+        "shortname": "C",
+        "variableprefix": "C",
+        "class": "passive",
+        "parameters": {
+          "C": {
+            "description": "Compliance",
+            "dimension": "m^6/J",
+            "value": 1
+          }
+        },
+        "states": {
+          "q_0": {
+            "description": "Liquid volume",
+            "dimension": "m^3",
+            "value": 0
+          }
+        },
+        "constitutive_relations": [
+          "q_0 - C * e_0",
+          "dot_q_0 - f_0"
+        ]
+      },
+      "Inductance": {
+        "description": "Fluid Inertia",
+        "name": "FluidInertance",
+        "shortname": "I",
+        "variableprefix": "I",
+        "class": "passive",
+        "states": {
+          "p_0": {
+            "description": "Fluid momentum",
+            "dimension": "J*s/m^3",
+            "value": 0
+          }
+        },
+        "parameters": {
+          "L": {
+            "description": "Inertance",
+            "dimension": "J*s^2/m^6",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "p_0 - L*f_0",
+          "dot_p_0 - e_0"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantPressureSource",
+        "description": "Constant Pressure Source",
+        "shortname": "Se",
+        "variableprefix": "Se",
+        "class": "passive",
+        "parameters": {
+          "u": {
+            "description": "Pressure",
+            "dimension": "J/m^3",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -u"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantFluidFlowSource",
+        "description": "Constant Fluid Flow Source",
+        "shortname": "Sf",
+        "variableprefix": "Sf",
+        "class": "passive",
+        "parameters": {
+          "nu": {
+            "description": "Flow rate",
+            "dimension": "m^3/s",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+nu"
+        ]
+      },
+      "BondDimensions": {
+        "effort": "J/m^3",
+        "flow": "m^3/s"
+      }
+    },
+    "Biochemical": {
+      "location": 3,
+      "Reaction": {
+        "name": "Reaction",
+        "description": "Biochemical Reaction",
+        "class": "passive",
+        "shortname": "Rx",
+        "ports": {
+          "0": {
+            "dir": "in"
+          },
+          "1": {
+            "dir": "out"
+          }
+        },
+        "parameters": {
+          "r": {
+            "description": "Reaction Rate"
+          },
+          "R": {
+            "description": "Universal Gas Constant"
+          },
+          "T": {
+            "description": "Temperature"
+          }
+        },
+        "constitutive_relations": [
+          "f_0 + f_1",
+          "f_0 - r*(exp(e_0/R/T) - exp(e_1/R/T))"
+        ]
+      },
+      "Concentration": {
+        "name": "Concentration",
+        "description": "Concentration of Chemical Species",
+        "class": "passive",
+        "shortname": "N",
+        "ports": {
+          "0": null
+        },
+        "parameters": {
+          "k": {
+            "description": "Biochemical Constant; exp(mu_0/RT)/V"
+          },
+          "R": {
+            "description": "Universal Gas Constant"
+          },
+          "T": {
+            "description": "Temperature"
+          }
+        },
+        "states": {
+          "a_0": "Molar Quantity"
+        },
+        "constitutive_relations": [
+          "e_0 - R*T*log(k*a_0)",
+          "f_0 - da_0"
+        ]
+      },
+      "Stoichiometry": {
+        "name": "Stoichiometry",
+        "description": "Stoichiometry",
+        "class": "junction",
+        "shortname": "Y",
+        "ports": {
+          "0": {
+            "dir": "in"
+          },
+          "1": {
+            "dir": "out"
+          }
+        },
+        "parameters": {
+          "r0": {
+            "description": "Affinity",
+            "dimension": "",
+            "value": -1
+          },
+          "r1": {
+            "description": "Chemical Power",
+            "dimension": "",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "r0*e_0 + r1*e_1",
+          "f_0/r0 - f_1/r1"
+        ]
+      },
+      "Chemostat": {
+        "name": "Chemostat",
+        "description": "Constant chemical potential",
+        "shortname": "SS",
+        "variableprefix": "Ss",
+        "class": "passive",
+        "ports": {
+          "0": "1"
+        },
+        "parameters": {
+          "mu": {
+            "description": "Potential",
+            "dimension": "J/mol",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -mu"
+        ]
+      },
+      "Flowstat": {
+        "name": "Flowstat",
+        "description": "Constant chemical flux",
+        "shortname": "Sf",
+        "variableprefix": "Sf",
+        "class": "passive",
+        "ports": {
+          "0": "1"
+        },
+        "parameters": {
+          "i": {
+            "description": "Chemical Flux",
+            "dimension": "mol/s",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+i"
+        ]
+      }
+    },
+    "Generic": {
+      "location": 1,
+      "Transformer": {
+        "name": "Transformer",
+        "description": "Linear Transformer",
+        "shortname": "TF",
+        "variableprefix": "TF",
+        "class": "junction",
+        "ports": {
+          "0": {
+            "effort": {
+              "name": "e_",
+              "unit": "Volt"
+            },
+            "flow": {
+              "name": "f_",
+              "unit": "Ampere"
+            },
+            "dir": "out"
+          },
+          "1": {
+            "effort": {
+              "name": "e_",
+              "unit": "Volt"
+            },
+            "flow": {
+              "name": "f_",
+              "unit": "Ampere"
+            },
+            "dir": "in"
+          }
+        },
+        "parameters": {
+          "n": {
+            "description": "Ratio",
+            "dimension": "",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_1 - n * e_0",
+          "f_0 + n * f_1"
+        ]
+      },
+      "Gyrator": {
+        "name": "Gyrator",
+        "description": "Linear Gyrator",
+        "shortname": "GY",
+        "variableprefix": "GY",
+        "class": "junction",
+        "ports": {
+          "0": {
+            "effort": {
+              "name": "e_",
+              "unit": "Volt"
+            },
+            "flow": {
+              "name": "f_",
+              "unit": "Ampere"
+            },
+            "dir": "in"
+          },
+          "1": {
+            "effort": {
+              "name": "e_",
+              "unit": "Volt"
+            },
+            "flow": {
+              "name": "f_",
+              "unit": "Ampere"
+            },
+            "dir": "out"
+          }
+        },
+        "parameters": {
+          "n": {
+            "description": "Ratio",
+            "dimension": "",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_1 + n*f_0",
+          "e_0 - n*f_1"
+        ]
+      },
+      "OneJunction": {
+        "name": "OneJunction",
+        "description": "Equal Flow Junction",
+        "shortname": "1",
+        "variableprefix": "One",
+        "class": "junction",
+        "ports": {
+          "limit": 100
+        },
+        "equate": [
+          "f_"
+        ]
+      },
+      "ZeroJunction": {
+        "name": "ZeroJunction",
+        "description": "Equal Effort Junction",
+        "shortname": "0",
+        "variableprefix": "Zero",
+        "class": "junction",
+        "ports": {
+          "limit": 100
+        },
+        "equate": [
+          "e_"
+        ]
+      },
+      "PotentialSource": {
+        "name": "ConstantPotentialSource",
+        "description": "Constant Potential Source",
+        "shortname": "Ge",
+        "variableprefix": "Ge",
+        "class": "passive",
+        "parameters": {
+          "u": {
+            "description": "Voltage",
+            "dimension": "V",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "e_0 -u"
+        ]
+      },
+      "FlowSource": {
+        "name": "ConstantFlowSource",
+        "description": "Constant Flow Source",
+        "shortname": "Gf",
+        "variableprefix": "Gf",
+        "class": "passive",
+        "parameters": {
+          "i": {
+            "description": "Current",
+            "dimension": "A",
+            "value": 1
+          }
+        },
+        "constitutive_relations": [
+          "f_0+i"
+        ]
+      }
+    },
+    "Composition": {
+      "location": 6,
+      "CellML": {
+        "name": "cellml",
+        "description": "CellML blackbox",
+        "shortname": "cm",
+        "variableprefix": "CML",
+        "class": "userdefined",
+        "ports": {
+          "limit": 100
+        }
+      }
+    },
+    "Annotation": {
+      "location": 7,
+      "Region": {
+        "name": "region",
+        "description": "Spatial Annotation",
+        "shortname": "Text",
+        "variableprefix": "",
+        "class": "annotation",
+        "ports": {
+          "limit": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+/**
+ * Common code used in bondgraph.cpp and utilities for creating instances using 
+ * element type and data instance
+ */
+    switch (etype) { 
+    case eResistance: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(__createResistance_do_not_call_outside_of_lib(data)); 
+        break; 
+    case eCapacitance: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(__createCapacitance_do_not_call_outside_of_lib(data)); 
+        break; 
+    case eInductance:  
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(__createInductance_do_not_call_outside_of_lib(data));  
+        break; 
+    case eTransformer: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createTransformer(data)); 
+        break; 
+    case eGyrator: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createGyrator(data)); 
+        break; 
+    case ePotentialSource: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createPotentialSource(data)); 
+        break; 
+    case eFlowSource: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createFlowSource(data)); 
+        break; 
+    case bReaction: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createReaction(data)); 
+        break; 
+    case bConcentration: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createConcentration(data)); 
+        break; 
+    case eZero: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createZeroJunction(data)); 
+        break; 
+    case eOne: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createOneJunction(data)); 
+        break; 
+    case ePortHamiltonian: { 
+        if (data.is_null()) { 
+            std::string &expr = obj->hamiltonian; 
+            std::vector<std::string> states_; 
+            for (int i = 0; i < obj->numStates; i++) { 
+                std::string &sp = obj->mParameter[i]->prefix; 
+                std::string sn = sp.substr(0, sp.rfind("_")); 
+                states_.push_back(sn); 
+            } 
+            ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createPortHamiltonian(expr, states_, data)); 
+        } else { 
+            ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createPortHamiltonian("", {}, data)); 
+        } 
+        break; 
+    } 
+    case eUserDefined: 
+        ptr = RCPLIB::rcp_dynamic_cast<BondGraphElementBase>(createUserDefined(data)); 
+        break; 
+    default: 
+        throw BGException("Element type proxy constructor not implemented!"); 
+    } 
